@@ -1,0 +1,14 @@
+{
+  "name": "weweb-abo-auswahl",
+  "version": "1.0.0",
+  "description": "WeWeb Coded Component – «Abo-Auswahl»: Basis / Komfort / Selbst bauen mit interaktivem Konfigurator und Stripe-Checkout.",
+  "private": true,
+  "scripts": {
+    "build": "weweb build",
+    "serve": "weweb serve"
+  },
+  "devDependencies": {
+    "@weweb/cli": "latest"
+  },
+  "license": "UNLICENSED"
+}
