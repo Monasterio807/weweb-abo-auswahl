@@ -1,6 +1,6 @@
 <template>
   <div class="hrk-root abo-root">
-    <main class="abo-page">
+    <main class="abo-page hrk-page">
 
       <!-- Header -->
       <div class="abo-header">
@@ -365,7 +365,7 @@ export default {
 .abo-rec__plan { font-size: 1.1rem; font-weight: 700; margin: 0; }
 
 /* Fehler */
-.abo-error { color: #dc2626; font-size: 0.9rem; text-align: center; margin-top: 1rem; }
+.abo-error { color: var(--hrk-danger); font-size: 0.9rem; text-align: center; margin-top: 1rem; }
 
 /* Später */
 .abo-later { text-align: center; margin-top: 2.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
