@@ -1,0 +1,36 @@
+# =============================================================================
+# CI Caller — minimale Datei für jeden WeWeb Komponenten-Repo
+#
+# Ablegen als:  .github/workflows/ci.yml  in jedem Komponenten-Repo
+#
+# Was passiert beim Push auf main:
+#   1. GitHub Actions ruft den Reusable Workflow aus Monasterio807/.github auf
+#   2. npm ci + Test-Gate (falls scripts.test vorhanden, MUSS grün sein)
+#   3. npm run build
+#   4. Falls dist/ geändert hat → auto-commit [skip ci]
+#   5. WeWeb erkennt den neuen Commit und baut eine neue «Uploaded»-Version
+#      (Publish bleibt Richards Klick)
+#
+# skip_tests: nur über den manuellen "Run workflow"-Button (workflow_dispatch)
+# nutzbar — niemals automatisch bei normalem Push auf main.
+# =============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: 'Tests überspringen (bewusster manueller Override)'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    uses: Monasterio807/.github/.github/workflows/build-weweb-component.yml@main
+    with:
+      skip_tests: ${{ inputs.skip_tests == true }}
+    secrets: inherit
