@@ -116,14 +116,14 @@ describe('Stripe-Checkout', () => {
     }));
     vi.stubGlobal('fetch', fetchMock);
 
-    const wrapper = mountComponent({ authToken: 'test-jwt' });
+    const wrapper = mountComponent({ authToken: 'test-jwt', supabaseUrl: 'https://ztvqsxdudzdyqgeylujr.supabase.co' });
     await wrapper.findAll('.abo-toggle__btn')[1].trigger('click'); // Jährlich
     await wrapper.findAll('.abo-card__cta')[1].trigger('click'); // Plus starten
     await flush();
 
     const call = fetchMock.mock.calls.find(([u]) => String(u).includes('/functions/v1/stripe-checkout'));
     expect(call).toBeTruthy();
-    // Standard-Supabase-URL (Zuerich) als Default
+    // Supabase-URL (Zuerich) kommt aus der supabaseUrl-Property (Default liegt in ww-config.js)
     expect(String(call[0])).toBe('https://ztvqsxdudzdyqgeylujr.supabase.co/functions/v1/stripe-checkout');
     // Header: Anon-Key + Bearer-JWT
     expect(call[1].headers.apikey).toBe('test-anon-key');

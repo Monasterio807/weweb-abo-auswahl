@@ -127,11 +127,11 @@ export default {
   },
   computed: {
     baseUrl() {
-      let url = (this.content && this.content.supabaseUrl) || 'https://ztvqsxdudzdyqgeylujr.supabase.co';
-      if (/nemxnflngcfrpamkuesm/.test(String(url))) url = 'https://ztvqsxdudzdyqgeylujr.supabase.co';
+      let url = (this.content && this.content.supabaseUrl) || '';
+      if (/nemxnflngcfrpamkuesm/.test(String(url))) url = '';
       return String(url).replace(/\/+$/, '');
     },
-    apiKey() { return (this.content && this.content.apiKey) || 'sb_publishable_4rsRb_VB3l_45JO7sw0VSA_ODDS4CZc'; },
+    apiKey() { return (this.content && this.content.apiKey) || ''; },
     authToken() {
       const t = (this.content && this.content.authToken) || '';
       return t.toString();
