@@ -36,8 +36,8 @@
           <p v-if="billing === 'year'" class="abo-card__saving">statt CHF 348/Jahr — 2 Monate gratis</p>
           <p class="abo-card__tagline">Ideal für Betriebe mit wenigen Mitarbeitenden.</p>
           <ul class="abo-card__features">
-            <li>✓ Emily — 10 Fragen/Woche</li>
-            <li>✓ 10 Dokumente/Monat</li>
+            <li>✓ Emily — 20 Fragen/Woche</li>
+            <li>✓ 5 Dokumente/Monat</li>
             <li>✓ Vertrag, Kündigung, Krankmeldung</li>
             <li>✓ Zeugnis, Verwarnung, Stelleninserat</li>
             <li>✓ Personaldossier & Dokumente-Upload</li>
