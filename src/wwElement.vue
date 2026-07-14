@@ -169,8 +169,8 @@ export default {
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok || !data.url) {
-          this.errorMsg = (data && (data.error || data.message)) || 'Checkout konnte nicht gestartet werden.';
-          this.emitEvent('error', { reason: 'checkout', status: res.status });
+          this.errorMsg = 'Der Checkout konnte nicht gestartet werden. Versuch es gleich nochmal.';
+          this.emitEvent('error', { reason: 'checkout', status: res.status, detail: (data && (data.error || data.message)) || '' });
           return;
         }
         if (typeof window !== 'undefined') window.location.href = data.url;
