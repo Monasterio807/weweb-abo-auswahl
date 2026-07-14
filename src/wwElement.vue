@@ -357,6 +357,7 @@ export default {
   font-weight: var(--hrk-fw-semibold);
   box-shadow: var(--hrk-shadow-card);
 }
+.abo-toggle__btn:focus-visible { outline: none; box-shadow: var(--hrk-focus-ring); }
 .abo-toggle__save {
   font-size: 0.7rem;
   font-weight: var(--hrk-fw-semibold);
@@ -427,5 +428,6 @@ export default {
   text-decoration: underline; padding: 0.25rem 0.5rem;
 }
 .abo-later__btn:hover { color: var(--hrk-text); }
+.abo-later__btn:focus-visible { outline: none; box-shadow: var(--hrk-focus-ring); border-radius: var(--hrk-radius-sm); }
 .abo-later__btn:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>
