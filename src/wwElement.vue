@@ -342,6 +342,7 @@ export default {
   background: none;
   border: none;
   border-radius: var(--hrk-radius-pill);
+  min-height: var(--hrk-tap-min);
   padding: 0.4rem 1.1rem;
   font-size: var(--hrk-fs-small);
   cursor: pointer;
@@ -426,6 +427,7 @@ export default {
   background: none; border: none; cursor: pointer;
   color: var(--hrk-text-muted); font-size: var(--hrk-fs-small);
   text-decoration: underline; padding: 0.25rem 0.5rem;
+  min-height: var(--hrk-tap-min);
 }
 .abo-later__btn:hover { color: var(--hrk-text); }
 .abo-later__btn:focus-visible { outline: none; box-shadow: var(--hrk-focus-ring); border-radius: var(--hrk-radius-sm); }
