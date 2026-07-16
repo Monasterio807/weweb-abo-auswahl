@@ -132,9 +132,30 @@ export default {
       return String(url).replace(/\/+$/, '');
     },
     apiKey() { return (this.content && this.content.apiKey) || ''; },
+    // Token LIVE lesen: Prop (WeWeb-Binding) -> globalContext (Live-Session) -> localStorage
+    // (persistierte Supabase-Session). Das Prop-Binding hinkt nach Login/Refresh hinterher —
+    // nach 60 Min waere der Checkout sonst still kaputt (Muster: vertrag-erstellen).
     authToken() {
-      const t = (this.content && this.content.authToken) || '';
-      return t.toString();
+      const fromProp = ((this.content && this.content.authToken) || '').toString().trim();
+      if (fromProp) return fromProp;
+      try {
+        const auth = (typeof wwLib !== 'undefined' && wwLib.globalContext && wwLib.globalContext.auth) ? wwLib.globalContext.auth : null;
+        const at = auth && auth.session && auth.session.access_token;
+        if (at) return String(at).trim();
+      } catch (e) { /* ignore */ }
+      try {
+        const win = (typeof wwLib !== 'undefined' && wwLib.getFrontWindow) ? wwLib.getFrontWindow() : (typeof window !== 'undefined' ? window : null);
+        const ls = win && win.localStorage;
+        if (ls) {
+          const raw = ls.getItem('sb-ztvqsxdudzdyqgeylujr-auth-token');
+          if (raw) {
+            const o = JSON.parse(raw);
+            const at = (o && o.access_token) || (o && o.currentSession && o.currentSession.access_token);
+            if (at) return String(at).trim();
+          }
+        }
+      } catch (e) { /* ignore */ }
+      return '';
     },
     authHeaders() {
       const bearer = this.authToken.startsWith('Bearer ') ? this.authToken : `Bearer ${this.authToken}`;
@@ -147,6 +168,43 @@ export default {
     emitEvent(name, payload) { this.$emit('trigger-event', { name, event: payload || {} }); },
     selectPlan(plan) { this.selected = plan; },
 
+    // Bei 401 das Supabase-Token via GoTrue (refresh_token) erneuern + Session zurueckschreiben
+    // (Muster: vertrag-erstellen). Gibt das frische access_token zurueck oder ''.
+    async _refreshAuthToken() {
+      try {
+        const auth = (typeof wwLib !== 'undefined' && wwLib.globalContext && wwLib.globalContext.auth) ? wwLib.globalContext.auth : null;
+        let rt = auth && auth.session && auth.session.refresh_token;
+        if (!rt) {
+          try {
+            const win = (typeof wwLib !== 'undefined' && wwLib.getFrontWindow) ? wwLib.getFrontWindow() : (typeof window !== 'undefined' ? window : null);
+            const raw = win && win.localStorage && win.localStorage.getItem('sb-ztvqsxdudzdyqgeylujr-auth-token');
+            if (raw) { const o = JSON.parse(raw); rt = (o && o.refresh_token) || (o && o.currentSession && o.currentSession.refresh_token); }
+          } catch (e) { /* ignore */ }
+        }
+        if (!rt || !this.apiKey) return '';
+        const res = await fetch(`${this.baseUrl}/auth/v1/token?grant_type=refresh_token`, {
+          method: 'POST', headers: { apikey: this.apiKey, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: rt }),
+        });
+        if (!res.ok) return '';
+        const ns = await res.json();
+        if (!ns || !ns.access_token) return '';
+        try {
+          const win = (typeof wwLib !== 'undefined' && wwLib.getFrontWindow) ? wwLib.getFrontWindow() : (typeof window !== 'undefined' ? window : null);
+          const ls = win && win.localStorage;
+          const wwSess = { access_token: ns.access_token, token_type: ns.token_type, expires_in: ns.expires_in, expires_at: ns.expires_at, refresh_token: ns.refresh_token };
+          if (ls) {
+            ls.setItem('ww-auth-session', JSON.stringify(wwSess));
+            const ref = ((String(this.baseUrl || '').match(/https?:\/\/([a-z0-9]+)\.supabase\.co/i) || [])[1]) || 'ztvqsxdudzdyqgeylujr';
+            const k = `sb-${ref}-auth-token`; const cur = JSON.parse(ls.getItem(k) || '{}');
+            ls.setItem(k, JSON.stringify(Object.assign(cur, wwSess, { user: ns.user || cur.user })));
+          }
+          if (auth && auth.session) Object.assign(auth.session, wwSess);
+        } catch (e) { /* writeback best-effort */ }
+        return ns.access_token;
+      } catch (e) { return ''; }
+    },
+
     async startCheckout(planKey) {
       this.errorMsg = '';
       if (!this.authToken) { this.errorMsg = 'Du bist nicht eingeloggt. Bitte melde dich an.'; return; }
@@ -158,15 +216,27 @@ export default {
       this.selected = planKey;
       this.emitEvent('checkout-started', { plan: planKey, billing: this.billing });
       try {
-        const res = await fetch(`${this.baseUrl}/functions/v1/stripe-checkout`, {
+        const body = JSON.stringify({
+          price_id: priceId,
+          success_url: (typeof window !== 'undefined' ? window.location.origin : '') + this.checkoutReturnUrl + '?checkout=success',
+          cancel_url:  (typeof window !== 'undefined' ? window.location.href : ''),
+        });
+        let res = await fetch(`${this.baseUrl}/functions/v1/stripe-checkout`, {
           method: 'POST',
           headers: { ...this.authHeaders, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            price_id: priceId,
-            success_url: (typeof window !== 'undefined' ? window.location.origin : '') + this.checkoutReturnUrl + '?checkout=success',
-            cancel_url:  (typeof window !== 'undefined' ? window.location.href : ''),
-          }),
+          body,
         });
+        if (res.status === 401) {
+          // Session evtl. nur abgelaufen — Token erneuern und EINMAL wiederholen, statt Fehler.
+          const fresh = await this._refreshAuthToken();
+          if (fresh) {
+            res = await fetch(`${this.baseUrl}/functions/v1/stripe-checkout`, {
+              method: 'POST',
+              headers: { apikey: this.apiKey, Authorization: `Bearer ${fresh}`, 'Content-Type': 'application/json' },
+              body,
+            });
+          }
+        }
         const data = await res.json().catch(() => ({}));
         if (!res.ok || !data.url) {
           this.errorMsg = 'Der Checkout konnte nicht gestartet werden. Versuch es gleich nochmal.';
