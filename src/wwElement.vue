@@ -22,61 +22,30 @@
         </div>
       </div>
 
-      <!-- Plan-Karten -->
-      <div class="abo-cards">
+      <!-- Plan-Karte (Ein-Plan-Modell seit 02.08.2026, Plus eingestellt) -->
+      <div class="abo-cards abo-cards--single">
 
         <!-- BASIS -->
-        <div class="hrk-card abo-card" :class="{ 'abo-card--selected': selected === 'basis' }" @click="selectPlan('basis')">
-          <div class="abo-card__badge" style="visibility:hidden">—</div>
-          <h2 class="abo-card__name">Basis</h2>
+        <div class="hrk-card abo-card abo-card--selected" @click="selectPlan('basis')">
+          <h2 class="abo-card__name">Imploya</h2>
           <div class="abo-card__price">
             <span class="abo-card__amount">CHF {{ billing === 'year' ? '290' : '29' }}</span>
             <span class="abo-card__period">{{ billing === 'year' ? '/Jahr' : '/Monat' }}</span>
           </div>
           <p v-if="billing === 'year'" class="abo-card__saving">statt CHF 348/Jahr — 2 Monate gratis</p>
-          <p class="abo-card__tagline">Ideal für Betriebe mit wenigen Mitarbeitenden.</p>
+          <p class="abo-card__tagline">Alles, was dein Betrieb für die HR-Basics braucht.</p>
           <ul class="abo-card__features">
-            <li>✓ Emily — 20 Fragen/Woche</li>
-            <li>✓ 5 Dokumente/Monat</li>
+            <li>✓ Emily — 30 Fragen/Monat</li>
+            <li>✓ 15 Dokumente/Monat</li>
             <li>✓ Vertrag, Kündigung, Krankmeldung</li>
             <li>✓ Zeugnis, Verwarnung, Stelleninserat</li>
             <li>✓ Personaldossier & Dokumente-Upload</li>
-            <li class="abo-card__feat--dim">— Offboarding-Paket</li>
-            <li class="abo-card__feat--dim">— Saison-Kit</li>
-            <li class="abo-card__feat--dim">— Onboarding-Checkliste</li>
-          </ul>
-          <button
-            class="hrk-btn hrk-btn--secondary abo-card__cta"
-            :disabled="busy"
-            @click.stop="startCheckout('basis')"
-          >{{ busy && selected === 'basis' ? 'Einen Moment …' : 'Basis starten' }}</button>
-        </div>
-
-        <!-- PLUS -->
-        <div class="hrk-card abo-card abo-card--highlight" :class="{ 'abo-card--selected': selected === 'plus' }" @click="selectPlan('plus')">
-          <div class="abo-card__badge">Empfohlen</div>
-          <h2 class="abo-card__name">Plus</h2>
-          <div class="abo-card__price">
-            <span class="abo-card__amount">CHF {{ billing === 'year' ? '590' : '59' }}</span>
-            <span class="abo-card__period">{{ billing === 'year' ? '/Jahr' : '/Monat' }}</span>
-          </div>
-          <p v-if="billing === 'year'" class="abo-card__saving">statt CHF 708/Jahr — 2 Monate gratis</p>
-          <p class="abo-card__tagline">Für wachsende Betriebe mit häufigeren HR-Fragen.</p>
-          <ul class="abo-card__features">
-            <li>✓ Emily — 30 Fragen/Woche</li>
-            <li>✓ 25 Dokumente/Monat</li>
-            <li>✓ Vertrag, Kündigung, Krankmeldung</li>
-            <li>✓ Zeugnis, Verwarnung, Stelleninserat</li>
-            <li>✓ Personaldossier & Dokumente-Upload</li>
-            <li>✓ Offboarding-Paket</li>
-            <li>✓ Saison-Kit</li>
-            <li>✓ Onboarding-Checkliste & Vorlagen</li>
           </ul>
           <button
             class="hrk-btn hrk-btn--primary abo-card__cta"
             :disabled="busy"
-            @click.stop="startCheckout('plus')"
-          >{{ busy && selected === 'plus' ? 'Einen Moment …' : 'Plus starten' }}</button>
+            @click.stop="startCheckout('basis')"
+          >{{ busy && selected === 'basis' ? 'Einen Moment …' : 'Jetzt starten' }}</button>
         </div>
 
       </div>
@@ -101,6 +70,14 @@
  * WeWeb Coded Component — «Abo-Auswahl»
  * v2 (30.06.2026): Basis CHF 29 / Plus CHF 59 — 2 Pläne statt 5.
  * Monats/Jahres-Toggle, 30-Tage-Trial via stripe-checkout v11.
+ * v3 (01.08.2026, K2-Audit-Fix): Kontingent-Zahlen korrigiert (waren seit der
+ *   subscription_limits-Anhebung vom 24.07. veraltet) + Einheit Woche->Monat.
+ *   Basis: 5 Dok./20 Emily-Woche -> 15 Dok./30 Emily-Monat.
+ *   Plus:  30 Emily-Woche -> 30 Emily-Monat (Dok.-Zahl 25 war bereits korrekt).
+ *   Quelle: subscription_limits + check_service_limit-RPC (monatlich, kein Wochenkontingent).
+ * v4 (02.08.2026, Richards Entscheid): Ein-Plan-Modell — Plus eingestellt (plan_prices.active
+ *   auf false gesetzt, keine Kunden betroffen, 0 aktive plus-Abos zum Zeitpunkt der Umstellung).
+ *   Nur noch Basis CHF 29/Mt bzw. CHF 290/Jahr.
  */
 export default {
   props: {
@@ -120,8 +97,6 @@ export default {
       priceIds: {
         basis_month: 'price_1TnxRXFLoauOOkHyLbCG9e4j',
         basis_year:  'price_1TnxRXFLoauOOkHyGTdJU7TP',
-        plus_month:  'price_1TnxTOFLoauOOkHyOdAJo7vj',
-        plus_year:   'price_1TnxTOFLoauOOkHyWUnmsk4z',
       },
     };
   },
@@ -208,9 +183,7 @@ export default {
     async startCheckout(planKey) {
       this.errorMsg = '';
       if (!this.authToken) { this.errorMsg = 'Du bist nicht eingeloggt. Bitte melde dich an.'; return; }
-      const priceId = planKey === 'basis'
-        ? (this.billing === 'year' ? this.priceIds.basis_year : this.priceIds.basis_month)
-        : (this.billing === 'year' ? this.priceIds.plus_year  : this.priceIds.plus_month);
+      const priceId = this.billing === 'year' ? this.priceIds.basis_year : this.priceIds.basis_month;
 
       this.busy = true;
       this.selected = planKey;
@@ -447,6 +420,12 @@ export default {
 }
 @media (max-width: 600px) {
   .abo-cards { grid-template-columns: 1fr; }
+}
+/* Ein-Plan-Modell: eine zentrierte, breitenbegrenzte Karte statt Zwei-Spalten-Grid */
+.abo-cards--single {
+  grid-template-columns: 1fr;
+  max-width: 380px;
+  margin: 0 auto;
 }
 
 /* Karte — auf .hrk-card aufgebaut, hier nur Layout + Auswahl-/Empfehlungs-Zustand */
