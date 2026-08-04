@@ -1,7 +1,7 @@
 {
   "name": "weweb-abo-auswahl",
   "version": "1.0.0",
-  "description": "WeWeb Coded Component – «Abo-Auswahl»: Basis / Komfort / Selbst bauen mit interaktivem Konfigurator und Stripe-Checkout.",
+  "description": "WeWeb Coded Component – «Abo-Auswahl»: Ein-Plan-Modell (Imploya CHF 29/Mt bzw. CHF 290/Jahr) mit Monats/Jahres-Toggle und Stripe-Checkout.",
   "private": true,
   "scripts": {
     "build": "weweb build",

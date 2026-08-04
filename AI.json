@@ -1,0 +1,40 @@
+{
+  "metadata": {
+    "name": "weweb-abo-auswahl",
+    "description": "Ein Plan Imploya CHF 29/Mt (bzw. CHF 290 pro Jahr, 2 Monate gratis) mit Monats/Jahres-Toggle und Stripe-Checkout. 30-Tage-Trial fuer Neukunden automatisch. Plus-Plan seit 02.08.2026 eingestellt.",
+    "keywords": ["abo", "plan", "stripe", "checkout", "imploya", "basis"],
+    "features": [
+      "Billing Toggle: Monatlich / Jaehrlich (2 Monate gratis)",
+      "Imploya CHF 29/Mt bzw. CHF 290/Jahr",
+      "30-Tage-Trial fuer Neukunden via stripe-checkout",
+      "Netzwerk-Timeout (15s) beim Checkout, 401-Token-Refresh-Retry"
+    ],
+    "inherit": []
+  },
+  "properties": [
+    { "name": "authToken", "description": "User-JWT des eingeloggten Nutzers.", "type": "string", "defaultValue": "" },
+    { "name": "apiKey", "description": "Supabase Anon-/Publishable-Key.", "type": "string", "defaultValue": "sb_publishable_4rsRb_VB3l_45JO7sw0VSA_ODDS4CZc" },
+    { "name": "supabaseUrl", "description": "Supabase-Projekt-URL.", "type": "string", "defaultValue": "https://ztvqsxdudzdyqgeylujr.supabase.co" },
+    { "name": "onboardingUrl", "description": "Ziel-URL fuer Spaeter-entscheiden.", "type": "string", "defaultValue": "/onboarding" },
+    { "name": "checkoutReturnUrl", "description": "URL nach erfolgreichem Stripe-Checkout.", "type": "string", "defaultValue": "/onboarding" }
+  ],
+  "states": [],
+  "events": [
+    { "name": "checkout-started", "description": "Feuert bevor Stripe-Redirect passiert.", "payload": { "plan": "basis", "billing": "month | year" } },
+    { "name": "skipped", "description": "Feuert wenn Nutzer Noch nicht klickt.", "payload": {} },
+    { "name": "error", "description": "Feuert bei Checkout- oder Netzwerkfehler.", "payload": { "reason": "checkout | network" } }
+  ],
+  "localContext": [],
+  "actions": [],
+  "slots": [],
+  "variables": [],
+  "specifications": [
+    "Stripe-Checkout via POST /functions/v1/stripe-checkout mit price_id.",
+    "Benoetigt authToken (User-JWT), mit Refresh-Retry bei 401.",
+    "Billing Toggle wechselt zwischen Monats- und Jahrespreis; ein einziger Plan (Basis/Imploya)."
+  ],
+  "examples": [
+    { "description": "Minimales Setup", "example": "{\"authToken\":\"Bearer <jwt>\",\"apiKey\":\"sb_publishable_...\",\"checkoutReturnUrl\":\"/dashboard\"}" }
+  ],
+  "dependencies": []
+}
