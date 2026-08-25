@@ -54,7 +54,11 @@
       <p v-if="errorMsg" class="abo-error" role="alert">{{ errorMsg }}</p>
 
       <!-- Hinweis Einzelpreise -->
-      <p class="abo-hint-extra">Zusätzliche Dokumente CHF 3/Stück · Extra Emily-Fragen CHF 9/10 Fragen</p>
+      <!-- W32 (Neukunden-Audit 24.08.2026, von Richard bestaetigt 25.08.): diese Zeile
+           steht direkt unter der Abo-Karte (30 Emily-Fragen/Monat inklusive) — hier
+           gilt der Abo-Preis fuer weitere Fragen, CHF 4, nicht der volle Preis CHF 9
+           ohne Abo. "Zusätzliche Dokumente CHF 3/Stück" war schon korrekt (Abo-Preis). -->
+      <p class="abo-hint-extra">Zusätzliche Dokumente CHF 3/Stück · Extra Emily-Fragen CHF 4/10 Fragen</p>
 
       <!-- Später entscheiden -->
       <div class="abo-later">
