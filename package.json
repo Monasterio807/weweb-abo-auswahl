@@ -4,7 +4,9 @@
   "description": "WeWeb Coded Component – «Abo-Auswahl»: Ein-Plan-Modell (Imploya CHF 29/Mt bzw. CHF 290/Jahr) mit Monats/Jahres-Toggle und Stripe-Checkout.",
   "private": true,
   "scripts": {
-    "build": "weweb build",
+    "build": "weweb build name=weweb-abo-auswahl type=wwobject",
+    "prebuild": "node -e \"require('fs').rmSync('dist/manager.js',{force:true})\"",
+    "postbuild": "node -e \"const fs=require('fs');let s;try{s=fs.statSync('dist/manager.js')}catch(e){};if(!s||s.size<1000){console.error('Bau fehlgeschlagen: dist/manager.js wurde nicht geschrieben.');process.exit(1)}\"",
     "serve": "weweb serve",
     "test": "vitest run"
   },
