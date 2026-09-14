@@ -5,6 +5,9 @@
 // Toggle mit exakter Preislogik (290/«2 Monate gratis»), Auswahl-Zustand,
 // Stripe-Checkout (Payload mit korrekter price_id, Header, Events,
 // Fehlerpfade) und Design-System-Regression (.hrk-*-Klassen).
+// v5 (14.09.2026, ECC-vue#1): zwei Tests fuer fetchWithTimeout ergaenzt —
+// echtes AbortSignal am stripe-checkout-Aufruf, plus der Timeout-Fall
+// (AbortError -> eigene Meldung, error-Event reason "timeout", Button frei).
 //
 // Hinweis: startCheckout() setzt bei Erfolg window.location.href — jsdom
 // meldet dafuer «Not implemented: navigation» als Log-Rauschen, der Test
@@ -181,6 +184,53 @@ describe('Stripe-Checkout', () => {
     await wrapper.find('.abo-later__btn').trigger('click');
     const events = (wrapper.emitted('trigger-event') || []).map(([e]) => e);
     expect(events.find((e) => e.name === 'skipped')).toBeTruthy();
+  });
+});
+
+// ECC-vue#1 (14.09.2026): fetchWithTimeout fuer Token-Refresh + stripe-checkout (Erst-
+// und 401-Retry-Aufruf). Zwei Dinge werden geprueft: dass der Checkout-Aufruf wirklich mit
+// einem echten AbortSignal laeuft (kein reiner Mock-Bypass) und dass ein Abbruch (AbortError)
+// eine eigene, verstaendliche Meldung zeigt statt des generischen Netzwerkfehlers, ein
+// error-Event mit reason "timeout" feuert und der Button wieder freigegeben wird.
+describe('Timeout (fetchWithTimeout)', () => {
+  it('stripe-checkout-Aufruf traegt ein echtes AbortSignal (AbortController tatsaechlich verdrahtet)', async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({ url: 'https://checkout.stripe.com/test-session' }),
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const wrapper = mountComponent({ authToken: 'test-jwt' });
+    await wrapper.find('.abo-card__cta').trigger('click');
+    await flush();
+
+    const call = fetchMock.mock.calls.find(([u]) => String(u).includes('/functions/v1/stripe-checkout'));
+    expect(call).toBeTruthy();
+    expect(call[1].signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it('Timeout (AbortError) beim Checkout: eigene Meldung, error-Event reason "timeout", Button wieder frei', async () => {
+    const abortError = Object.assign(new Error('The operation was aborted.'), { name: 'AbortError' });
+    const fetchMock = vi.fn(async () => { throw abortError; });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const wrapper = mountComponent({ authToken: 'test-jwt' });
+    await wrapper.find('.abo-card__cta').trigger('click');
+    await flush();
+
+    expect(wrapper.vm.errorMsg).toBe('Verbindung dauert zu lange, bitte nochmals versuchen.');
+    expect(wrapper.vm.busy).toBe(false);
+
+    const events = (wrapper.emitted('trigger-event') || []).map(([e]) => e);
+    const errorEvent = events.find((e) => e.name === 'error');
+    expect(errorEvent).toBeTruthy();
+    expect(errorEvent.event.reason).toBe('timeout');
+
+    // Button ist wieder anklickbar (busy=false hebt :disabled auf)
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find('.abo-card__cta').attributes('disabled')).toBeUndefined();
+    expect(wrapper.find('.abo-error').text()).toBe('Verbindung dauert zu lange, bitte nochmals versuchen.');
   });
 });
 

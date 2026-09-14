@@ -82,6 +82,12 @@
  * v4 (02.08.2026, Richards Entscheid): Ein-Plan-Modell — Plus eingestellt (plan_prices.active
  *   auf false gesetzt, keine Kunden betroffen, 0 aktive plus-Abos zum Zeitpunkt der Umstellung).
  *   Nur noch Basis CHF 29/Mt bzw. CHF 290/Jahr.
+ * v5 (14.09.2026, ECC-vue#1): fetchWithTimeout ergaenzt (Muster vertrag-erstellen/dashboard-start,
+ *   20s) — Token-Refresh und beide stripe-checkout-Aufrufe (Erst- und 401-Retry) liefen bisher
+ *   ohne Zeitlimit; der Button haette bei einer haengenden Verbindung ewig auf "Einen Moment ..."
+ *   stehen bleiben koennen. Bei Timeout eigene Meldung ("Verbindung dauert zu lange, bitte nochmals
+ *   versuchen.") statt der generischen Netzwerkfehler-Meldung, Button wird ueber das bestehende
+ *   finally (busy = false) wieder freigegeben.
  */
 export default {
   props: {
@@ -147,6 +153,20 @@ export default {
     emitEvent(name, payload) { this.$emit('trigger-event', { name, event: payload || {} }); },
     selectPlan(plan) { this.selected = plan; },
 
+    // fetch mit Timeout (AbortController) — bricht haengende Requests nach ms ab, damit der
+    // "Jetzt starten"-Button nie ewig auf "Einen Moment ..." stehen bleibt (Muster: vertrag-
+    // erstellen / dashboard-start). Abbruch landet als AbortError im jeweiligen catch.
+    async fetchWithTimeout(url, options, ms) {
+      const timeout = ms || 20000;
+      const ac = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      const timer = ac ? setTimeout(() => ac.abort(), timeout) : null;
+      try {
+        return await fetch(url, ac ? Object.assign({}, options, { signal: ac.signal }) : options);
+      } finally {
+        if (timer) clearTimeout(timer);
+      }
+    },
+
     // Bei 401 das Supabase-Token via GoTrue (refresh_token) erneuern + Session zurueckschreiben
     // (Muster: vertrag-erstellen). Gibt das frische access_token zurueck oder ''.
     async _refreshAuthToken() {
@@ -161,7 +181,7 @@ export default {
           } catch (e) { /* ignore */ }
         }
         if (!rt || !this.apiKey) return '';
-        const res = await fetch(`${this.baseUrl}/auth/v1/token?grant_type=refresh_token`, {
+        const res = await this.fetchWithTimeout(`${this.baseUrl}/auth/v1/token?grant_type=refresh_token`, {
           method: 'POST', headers: { apikey: this.apiKey, 'Content-Type': 'application/json' },
           body: JSON.stringify({ refresh_token: rt }),
         });
@@ -198,7 +218,7 @@ export default {
           success_url: (typeof window !== 'undefined' ? window.location.origin : '') + this.checkoutReturnUrl + '?checkout=success',
           cancel_url:  (typeof window !== 'undefined' ? window.location.href : ''),
         });
-        let res = await fetch(`${this.baseUrl}/functions/v1/stripe-checkout`, {
+        let res = await this.fetchWithTimeout(`${this.baseUrl}/functions/v1/stripe-checkout`, {
           method: 'POST',
           headers: { ...this.authHeaders, 'Content-Type': 'application/json' },
           body,
@@ -207,7 +227,7 @@ export default {
           // Session evtl. nur abgelaufen — Token erneuern und EINMAL wiederholen, statt Fehler.
           const fresh = await this._refreshAuthToken();
           if (fresh) {
-            res = await fetch(`${this.baseUrl}/functions/v1/stripe-checkout`, {
+            res = await this.fetchWithTimeout(`${this.baseUrl}/functions/v1/stripe-checkout`, {
               method: 'POST',
               headers: { apikey: this.apiKey, Authorization: `Bearer ${fresh}`, 'Content-Type': 'application/json' },
               body,
@@ -222,8 +242,15 @@ export default {
         }
         if (typeof window !== 'undefined') window.location.href = data.url;
       } catch (e) {
-        this.errorMsg = 'Netzwerkfehler. Bitte versuche es nochmal.';
-        this.emitEvent('error', { reason: 'network' });
+        // Timeout (AbortController-Abbruch nach fetchWithTimeout) bekommt eine eigene,
+        // verstaendliche Meldung statt des generischen Netzwerkfehlers.
+        if (e && e.name === 'AbortError') {
+          this.errorMsg = 'Verbindung dauert zu lange, bitte nochmals versuchen.';
+          this.emitEvent('error', { reason: 'timeout' });
+        } else {
+          this.errorMsg = 'Netzwerkfehler. Bitte versuche es nochmal.';
+          this.emitEvent('error', { reason: 'network' });
+        }
       } finally { this.busy = false; }
     },
 
