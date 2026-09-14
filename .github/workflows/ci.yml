@@ -72,6 +72,9 @@ jobs:
       - name: Abhaengigkeiten installieren
         run: npm install --no-audit --no-fund
 
+      - name: sass fuer den Build (nicht in package.json, siehe CLAUDE.md §3)
+        run: npm install --no-save --no-audit --no-fund sass
+
       - name: Gibt es ein Test-Script?
         id: has_test
         run: |
