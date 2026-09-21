@@ -146,10 +146,30 @@ export default {
       const bearer = this.authToken.startsWith('Bearer ') ? this.authToken : `Bearer ${this.authToken}`;
       return { apikey: this.apiKey, Authorization: bearer };
     },
-    onboardingUrl() { return ((this.content && this.content.onboardingUrl) || '/onboarding').toString(); },
-    checkoutReturnUrl() { return ((this.content && this.content.checkoutReturnUrl) || '/onboarding').toString(); },
+    // Entscheid 1 (20.09.2026): '/vertrag-erstellen' ist die Vertrags-Strecke,
+    // '/onboarding' wird Weiterleitung. Kopf- und Fusszeile biegen den Altwert
+    // seit dem 20.09. beim Rendern um; diese Komponente zog nicht mit und schickte
+    // den Kunden nach «Später» und nach dem bezahlten Checkout weiterhin in den
+    // alten Wizard. Ein neuer ww-config-Default allein reicht dafuer nicht — er
+    // erreicht bestehende Instanzen nie (Auto-Memory
+    // weweb-ww-config-default-erreicht-live-nie), darum dieselbe Umschreibung
+    // beim Rendern wie im Kopf.
+    onboardingUrl() { return this.zielUmbiegen((this.content && this.content.onboardingUrl) || '/vertrag-erstellen'); },
+    checkoutReturnUrl() { return this.zielUmbiegen((this.content && this.content.checkoutReturnUrl) || '/vertrag-erstellen'); },
   },
   methods: {
+    // Altwerte, die auf den Instanzen gebunden sind, beim Rendern auf das heutige
+    // Ziel umschreiben. Wortlaut und Begruendung wie in coded-component-header-pro;
+    // dort steht die vollstaendige Messung vom 20.09.2026 (39 von 47 Kopf-Instanzen
+    // zeigten auf '/onboarding'). Unbekannte Werte bleiben unveraendert.
+    zielUmbiegen(v) {
+      const REDIRECT = {
+        '/onboarding': '/vertrag-erstellen',
+        '/seite---vertrag-erstellen': '/vertrag-erstellen',
+        '/vertrag-erstellen-probe': '/vertrag-erstellen',
+      };
+      return REDIRECT[String(v).trim()] || String(v);
+    },
     emitEvent(name, payload) { this.$emit('trigger-event', { name, event: payload || {} }); },
     selectPlan(plan) { this.selected = plan; },
 

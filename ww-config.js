@@ -36,14 +36,14 @@ export default {
       type: 'Text',
       section: 'settings',
       bindable: true,
-      defaultValue: '/onboarding',
+      defaultValue: '/vertrag-erstellen',
     },
     checkoutReturnUrl: {
       label: { en: 'Checkout return URL', de: 'URL nach Checkout' },
       type: 'Text',
       section: 'settings',
       bindable: true,
-      defaultValue: '/onboarding',
+      defaultValue: '/vertrag-erstellen',
     },
   },
 };
