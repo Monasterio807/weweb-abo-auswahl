@@ -115,7 +115,9 @@ describe('Stripe-Checkout', () => {
     // Payload: exakt die Basis-Jahres-Price-ID + Return-URLs
     const body = JSON.parse(call[1].body);
     expect(body.price_id).toBe(PRICE_IDS.basis_year);
-    expect(body.success_url).toBe('http://localhost/onboarding?checkout=success');
+    // Entscheid 1 (20.09.2026): Rueckkehr nach dem Checkout fuehrt in die
+    // Vertrags-Strecke, nicht mehr in den alten Wizard auf /onboarding.
+    expect(body.success_url).toBe('http://localhost/vertrag-erstellen?checkout=success');
     expect(body.cancel_url).toBe('http://localhost/');
 
     // WeWeb-Event checkout-started mit Plan + Abrechnungsart
