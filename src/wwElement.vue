@@ -39,7 +39,7 @@
             <li><svg class="hrk-icon hrk-icon--sm abo-card__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="5,12.5 10,17.5 19,7"/></svg>15 Dokumente/Monat</li>
             <li><svg class="hrk-icon hrk-icon--sm abo-card__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="5,12.5 10,17.5 19,7"/></svg>Vertrag, Kündigung, Krankmeldung</li>
             <li><svg class="hrk-icon hrk-icon--sm abo-card__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="5,12.5 10,17.5 19,7"/></svg>Zeugnis, Verwarnung, Stelleninserat</li>
-            <li><svg class="hrk-icon hrk-icon--sm abo-card__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="5,12.5 10,17.5 19,7"/></svg>Personaldossier & Dokumente-Upload</li>
+            <li><svg class="hrk-icon hrk-icon--sm abo-card__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="5,12.5 10,17.5 19,7"/></svg>Mitarbeitende & Dokumente-Upload</li>
           </ul>
           <button
             class="hrk-btn hrk-btn--primary abo-card__cta"
