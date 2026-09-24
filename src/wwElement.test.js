@@ -44,18 +44,22 @@ afterEach(() => {
 });
 
 describe('Ein-Plan-Modell: genau eine Karte mit Namen, Preis und Features', () => {
-  it('rendert genau eine Karte: Imploya (CHF 29/Monat)', () => {
+  // Fix-Runde 24.09.2026: Planname «Basis» statt «Imploya» (Entscheid 9, s6-B11), Leistungszeilen
+  // ohne Gedankenstrich und im Wortlaut von /abo (s1-B15). Ohne supabaseUrl wird plan_prices
+  // nicht geladen: die Karte zeigt ihren Anzeigewert 29 (siehe preisMonatChf).
+  it('rendert genau eine Karte: Basis (CHF 29/Monat)', () => {
     const wrapper = mountComponent();
     const cards = wrapper.findAll('.abo-card');
     expect(cards.length).toBe(1);
 
     const basis = cards[0];
-    expect(basis.find('.abo-card__name').text()).toBe('Imploya');
+    expect(basis.find('.abo-card__name').text()).toBe('Basis');
     expect(basis.find('.abo-card__amount').text()).toBe('CHF 29');
     expect(basis.find('.abo-card__period').text()).toBe('/Monat');
 
-    expect(basis.text()).toContain('Emily — 30 Fragen/Monat');
-    expect(basis.text()).toContain('15 Dokumente/Monat');
+    expect(basis.text()).toContain('30 Fragen an Emily pro Monat');
+    expect(basis.text()).toContain('15 Dokumente pro Monat');
+    expect(basis.text()).not.toMatch(/[—–]/);
     // Kein Vergleich mehr noetig, keine ausgegrauten Zeilen
     expect(basis.findAll('.abo-card__feat--dim').length).toBe(0);
   });
@@ -74,9 +78,12 @@ describe('Ein-Plan-Modell: genau eine Karte mit Namen, Preis und Features', () =
     expect(amounts).toEqual(['CHF 290']);
     const periods = wrapper.findAll('.abo-card__period').map((n) => n.text());
     expect(periods).toEqual(['/Jahr']);
-    // Exakte Ersparnis-Logik: 12×29=348, 2 Monate gratis
+    // Fix-Runde 24.09.2026 (s6-B02, Entscheid 8): frueher stand hier fest «statt CHF 348/Jahr»
+    // (12 x Aktionspreis, eine Zahl, die niemand zahlt). Der Bezugspreis kommt jetzt nur noch
+    // aus plan_prices (Test unten). Ohne geladene Preise bleibt allein «2 Monate gratis».
     const savings = wrapper.findAll('.abo-card__saving').map((n) => n.text());
-    expect(savings[0]).toBe('statt CHF 348/Jahr — 2 Monate gratis');
+    expect(savings[0]).toBe('2 Monate gratis');
+    expect(savings[0]).not.toContain('348');
   });
 });
 
@@ -241,12 +248,146 @@ describe('Design-System-Regression (.hrk-* Tokens/Klassen)', () => {
     const wrapper = mountComponent();
     expect(wrapper.find('.hrk-root').exists()).toBe(true);
     expect(wrapper.find('.hrk-page').exists()).toBe(true);
-    expect(wrapper.find('.hrk-h1').text()).toBe('Wähle dein Imploya-Abo');
+    // Fix-Runde 24.09.2026 (Entscheid 9, s6-B11): «Wähle dein Abo» statt «Wähle dein Imploya-Abo».
+    expect(wrapper.find('.hrk-h1').text()).toBe('Wähle dein Abo');
     // Eine Plan-Karte baut auf .hrk-card auf
     expect(wrapper.findAll('.hrk-card').length).toBe(1);
     // Design-Regel: genau EIN .hrk-btn--primary pro Seite
     expect(wrapper.findAll('.hrk-btn--primary').length).toBe(1);
     expect(wrapper.findAll('.hrk-btn--secondary').length).toBe(0);
     expect(wrapper.find('.abo-card__cta').classes()).toContain('hrk-btn');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Fix-Runde 24.09.2026 (Vollaudit Kundensicht, Buendel F29): Preise und Bezugspreis
+// aus plan_prices, Gratismonat-Satz wie /abo, Texte ohne Gedankenstrich.
+// ---------------------------------------------------------------------------
+describe('F29: Preise aus plan_prices (Entscheid 8)', () => {
+  const PLAN_PRICES = [
+    { plan: 'basis', interval: 'month', active: true, stripe_price_id: PRICE_IDS.basis_month, amount_rappen: 2900 },
+    { plan: 'basis', interval: 'year', active: true, stripe_price_id: PRICE_IDS.basis_year, amount_rappen: 29000 },
+    { plan: 'basis', interval: 'month', active: false, stripe_price_id: 'price_normal_month', amount_rappen: 3900 },
+    { plan: 'basis', interval: 'year', active: false, stripe_price_id: 'price_normal_year', amount_rappen: 39000 },
+  ];
+  const stubPreise = (rows, calls = []) => vi.fn(async (url, opt) => {
+    calls.push({ url: String(url), opt });
+    return { ok: true, status: 200, json: async () => rows };
+  });
+  const URL_ZH = 'https://ztvqsxdudzdyqgeylujr.supabase.co';
+
+  it('Jahr: «statt CHF 390 im Jahr, 2 Monate gratis» aus der inaktiven Normalpreis-Zeile', async () => {
+    const calls = [];
+    vi.stubGlobal('fetch', stubPreise(PLAN_PRICES, calls));
+    const wrapper = mountComponent({ supabaseUrl: URL_ZH });
+    await flush();
+    await wrapper.findAll('.abo-toggle__btn')[1].trigger('click');
+    expect(wrapper.find('.abo-card__amount').text()).toBe('CHF 290');
+    expect(wrapper.find('.abo-card__saving').text()).toBe('statt CHF 390 im Jahr, 2 Monate gratis');
+    // oeffentliche Tabelle: nur der Anon-Key geht mit, kein Nutzer-Token noetig
+    const c = calls.find((x) => x.url.includes('/rest/v1/plan_prices'));
+    expect(c.url).toContain('plan=eq.basis');
+    expect(c.opt.headers.apikey).toBe('test-anon-key');
+  });
+
+  // Nachbesserung 24.09.2026 (Prüfung W1): ohne Login ist die Trial-Berechtigung unbekannt,
+  // darum der vorsichtige Wortlaut «Beim ersten Abo …» statt eines festen Gratis-Versprechens.
+  it('Betraege folgen der DB (nicht fest verdrahtet): Monat 3100 -> CHF 31, auch im Einleitungssatz', async () => {
+    const rows = PLAN_PRICES.map((r) => (r.stripe_price_id === PRICE_IDS.basis_month ? { ...r, amount_rappen: 3100 } : r));
+    vi.stubGlobal('fetch', stubPreise(rows));
+    const wrapper = mountComponent({ supabaseUrl: URL_ZH });
+    await flush();
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find('.abo-card__amount').text()).toBe('CHF 31');
+    expect(wrapper.find('.abo-header .hrk-muted').text()).toBe('Beim ersten Abo ist der erste Monat gratis, ohne Kreditkarte. Danach zahlst du CHF 31 im Monat.');
+  });
+
+  it('ohne Normalpreis-Zeile kein Bezugspreis (keine erfundene 390)', async () => {
+    vi.stubGlobal('fetch', stubPreise(PLAN_PRICES.filter((r) => r.active)));
+    const wrapper = mountComponent({ supabaseUrl: URL_ZH });
+    await flush();
+    await wrapper.findAll('.abo-toggle__btn')[1].trigger('click');
+    expect(wrapper.find('.abo-card__saving').text()).toBe('2 Monate gratis');
+  });
+
+  it('Lesefehler: Karte behaelt ihren Anzeigewert, keine Fehlermeldung fuer den Kunden', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: false, status: 500, json: async () => ({}) })));
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const wrapper = mountComponent({ supabaseUrl: URL_ZH });
+    await flush();
+    expect(wrapper.find('.abo-card__amount').text()).toBe('CHF 29');
+    expect(wrapper.vm.errorMsg).toBe('');
+  });
+
+  // Nachbesserung 24.09.2026 (Prüfung W1/K3): ohne Login unbekannte Trial-Berechtigung (vorsichtiger
+  // Wortlaut), ohne geladene plan_prices-Zeile kein Betrag im Satz.
+  it('Texte: Einleitung ohne «jederzeit kündbar», «Noch nicht, ich schau mich erst um», kein Gedankenstrich', () => {
+    const wrapper = mountComponent();
+    expect(wrapper.find('.abo-header .hrk-muted').text()).toBe('Beim ersten Abo ist der erste Monat gratis, ohne Kreditkarte.');
+    expect(wrapper.text()).not.toContain('jederzeit kündbar');
+    expect(wrapper.find('.abo-later__btn').text()).toBe('Noch nicht, ich schau mich erst um');
+    expect(wrapper.text()).not.toMatch(/[—–]/);
+    expect(wrapper.text()).not.toContain('Imploya');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Nachbesserung 24.09.2026 (Prüfung W1, K1): Gratismonat nur versprechen, wenn es noch keine
+// subscriptions-Zeile gibt (gleiche Regel wie stripe-checkout «Trial prüfen» und /abo).
+// ---------------------------------------------------------------------------
+describe('F29 Nachbesserung: Trial-Berechtigung', () => {
+  const B64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64').replace(/=+$/, '');
+  const JWT = `x.${B64({ sub: 'user-1' })}.y`;
+  const URL_ZH = 'https://ztvqsxdudzdyqgeylujr.supabase.co';
+  const PREISE = [
+    { plan: 'basis', interval: 'month', active: true, stripe_price_id: PRICE_IDS.basis_month, amount_rappen: 2900 },
+    { plan: 'basis', interval: 'year', active: true, stripe_price_id: PRICE_IDS.basis_year, amount_rappen: 29000 },
+    { plan: 'basis', interval: 'year', active: false, stripe_price_id: 'n', amount_rappen: 39000 },
+  ];
+  const route = (subs, calls = []) => vi.fn(async (url, opt) => {
+    const u = String(url); calls.push({ u, opt });
+    if (u.includes('/rest/v1/subscriptions?')) {
+      if (subs === 'fehler') return { ok: false, status: 500, json: async () => ({}) };
+      return { ok: true, status: 200, json: async () => subs };
+    }
+    if (u.includes('/rest/v1/plan_prices')) return { ok: true, status: 200, json: async () => PREISE };
+    return { ok: true, status: 200, json: async () => [] };
+  });
+  const einl = (w) => w.find('.abo-header .hrk-muted').text();
+
+  it('Neukunde (keine subscriptions-Zeile): Gratismonat, Abfrage auf eigene user_id mit User-JWT', async () => {
+    const calls = [];
+    vi.stubGlobal('fetch', route([], calls));
+    const w = mountComponent({ authToken: JWT, supabaseUrl: URL_ZH });
+    await flush(); await w.vm.$nextTick();
+    expect(einl(w)).toBe('Der erste Monat im Abo ist gratis, ohne Kreditkarte. Danach zahlst du CHF 29 im Monat.');
+    const c = calls.find((x) => x.u.includes('/rest/v1/subscriptions?'));
+    expect(c.u).toContain('user_id=eq.user-1');
+    expect(c.opt.headers.Authorization).toBe('Bearer ' + JWT);
+  });
+
+  it('Rückkehrer (Zeile da): kein Gratis-Versprechen, kein «ohne Kreditkarte»', async () => {
+    vi.stubGlobal('fetch', route([{ id: 's-1' }]));
+    const w = mountComponent({ authToken: JWT, supabaseUrl: URL_ZH });
+    await flush(); await w.vm.$nextTick();
+    expect(einl(w)).toBe('Das Abo kostet CHF 29 im Monat.');
+    expect(w.text()).not.toContain('gratis, ohne Kreditkarte');
+  });
+
+  it('Lesefehler: vorsichtiger Wortlaut «Beim ersten Abo …»', async () => {
+    vi.stubGlobal('fetch', route('fehler'));
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const w = mountComponent({ authToken: JWT, supabaseUrl: URL_ZH });
+    await flush(); await w.vm.$nextTick();
+    expect(w.vm.trialBerechtigt).toBe(null);
+    expect(einl(w)).toBe('Beim ersten Abo ist der erste Monat gratis, ohne Kreditkarte. Danach zahlst du CHF 29 im Monat.');
+  });
+
+  it('K1: Umschalter «Jährlich» -> Betrag im Jahr', async () => {
+    vi.stubGlobal('fetch', route([]));
+    const w = mountComponent({ authToken: JWT, supabaseUrl: URL_ZH });
+    await flush();
+    await w.findAll('.abo-toggle__btn')[1].trigger('click');
+    expect(einl(w)).toBe('Der erste Monat im Abo ist gratis, ohne Kreditkarte. Danach zahlst du CHF 290 im Jahr.');
   });
 });

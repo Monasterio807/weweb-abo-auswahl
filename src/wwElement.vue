@@ -4,8 +4,9 @@
 
       <!-- Header -->
       <div class="abo-header">
-        <h1 class="hrk-h1">Wähle dein Imploya-Abo</h1>
-        <p class="hrk-muted">30 Tage kostenlos testen — keine Kreditkarte, jederzeit kündbar.</p>
+        <!-- Fix-Runde 24.09.2026 (s6-B11 Entscheid 9, s6-B10 Entscheid 7): Planname «Basis», Gratismonat-Satz wie auf /abo, Preis aus plan_prices. -->
+        <h1 class="hrk-h1">Wähle dein Abo</h1>
+        <p v-if="einleitung" class="hrk-muted">{{ einleitung }}</p>
 
         <!-- Billing Toggle -->
         <div class="abo-toggle">
@@ -27,16 +28,17 @@
 
         <!-- BASIS -->
         <div class="hrk-card abo-card abo-card--selected" @click="selectPlan('basis')">
-          <h2 class="abo-card__name">Imploya</h2>
+          <h2 class="abo-card__name">Basis</h2>
           <div class="abo-card__price">
-            <span class="abo-card__amount">CHF {{ billing === 'year' ? '290' : '29' }}</span>
+            <span class="abo-card__amount">CHF {{ billing === 'year' ? preisJahrChf : preisMonatChf }}</span>
             <span class="abo-card__period">{{ billing === 'year' ? '/Jahr' : '/Monat' }}</span>
           </div>
-          <p v-if="billing === 'year'" class="abo-card__saving">statt CHF 348/Jahr — 2 Monate gratis</p>
+          <!-- Fix-Runde 24.09.2026 (s6-B02, Entscheid 8): Bezugspreis = inaktive Normalpreis-Zeile aus plan_prices, nie 12 x Aktionspreis. -->
+          <p v-if="billing === 'year'" class="abo-card__saving">{{ sparHinweis }}</p>
           <p class="abo-card__tagline">Alles, was dein Betrieb für die HR-Basics braucht.</p>
           <ul class="abo-card__features">
-            <li><svg class="hrk-icon hrk-icon--sm abo-card__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="5,12.5 10,17.5 19,7"/></svg>Emily — 30 Fragen/Monat</li>
-            <li><svg class="hrk-icon hrk-icon--sm abo-card__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="5,12.5 10,17.5 19,7"/></svg>15 Dokumente/Monat</li>
+            <li><svg class="hrk-icon hrk-icon--sm abo-card__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="5,12.5 10,17.5 19,7"/></svg>30 Fragen an Emily pro Monat</li>
+            <li><svg class="hrk-icon hrk-icon--sm abo-card__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="5,12.5 10,17.5 19,7"/></svg>15 Dokumente pro Monat</li>
             <li><svg class="hrk-icon hrk-icon--sm abo-card__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="5,12.5 10,17.5 19,7"/></svg>Vertrag, Kündigung, Krankmeldung</li>
             <li><svg class="hrk-icon hrk-icon--sm abo-card__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="5,12.5 10,17.5 19,7"/></svg>Zeugnis, Verwarnung, Stelleninserat</li>
             <li><svg class="hrk-icon hrk-icon--sm abo-card__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="5,12.5 10,17.5 19,7"/></svg>Mitarbeitende & Dokumente-Upload</li>
@@ -62,7 +64,7 @@
 
       <!-- Später entscheiden -->
       <div class="abo-later">
-        <button class="abo-later__btn" :disabled="busy" @click="skipForNow">Noch nicht — ich schau mich erst um</button>
+        <button class="abo-later__btn" :disabled="busy" @click="skipForNow">Noch nicht, ich schau mich erst um</button>
       </div>
 
     </main>
@@ -104,6 +106,13 @@ export default {
       selected: null,
       busy: false,
       errorMsg: '',
+      // Fix-Runde 24.09.2026 (s6-B02): plan_prices-Zeilen des Basis-Plans (aktive und
+      // inaktive Normalpreise). Leer, solange nichts geladen ist.
+      preise: [],
+      // Nachbesserung 24.09.2026 (Prüfung W1): wie /abo (abo-verwalten). true = noch keine
+      // subscriptions-Zeile, also Gratismonat laut stripe-checkout «Trial prüfen»; false = hatte
+      // schon ein Abo; null = unbekannt (nicht angemeldet, keine user_id oder Lesefehler).
+      trialBerechtigt: null,
       priceIds: {
         basis_month: 'price_1TnxRXFLoauOOkHyLbCG9e4j',
         basis_year:  'price_1TnxRXFLoauOOkHyGTdJU7TP',
@@ -156,7 +165,61 @@ export default {
     // beim Rendern wie im Kopf.
     onboardingUrl() { return this.zielUmbiegen((this.content && this.content.onboardingUrl) || '/vertrag-erstellen'); },
     checkoutReturnUrl() { return this.zielUmbiegen((this.content && this.content.checkoutReturnUrl) || '/vertrag-erstellen'); },
+
+    // ---- Fix-Runde 24.09.2026 (Vollaudit Kundensicht, F29) ----
+    // Die Karte zeigt den Betrag der plan_prices-Zeile, deren stripe_price_id der Checkout
+    // wirklich sendet (priceIds). Ist die Tabelle (noch) nicht geladen, bleibt der bisherige
+    // Anzeigewert stehen (29/290, gemessen 24.09.2026 identisch mit plan_prices), damit die
+    // Karte nie ohne Preis dasteht. Neue Zahlen (Bezugspreis) gibt es NUR aus der DB.
+    zeileMonat() { return this.preise.find(p => p.active !== false && p.stripe_price_id === this.priceIds.basis_month) || null; },
+    zeileJahr() { return this.preise.find(p => p.active !== false && p.stripe_price_id === this.priceIds.basis_year) || null; },
+    preisMonatChf() { return this.zeileMonat ? this.chf(this.zeileMonat.amount_rappen) : '29'; },
+    preisJahrChf() { return this.zeileJahr ? this.chf(this.zeileJahr.amount_rappen) : '290'; },
+    // Entscheid 8 (20.09.2026): verglichen wird mit dem Normalpreis (inaktive, teurere
+    // Jahreszeile des Basis-Plans, live 39000), nicht mit 12 x Aktionspreis (348).
+    normalJahrChf() {
+      if (!this.zeileJahr) return '';
+      const n = this.preise
+        .filter(p => p.active === false && p.interval === 'year' && p.amount_rappen > this.zeileJahr.amount_rappen)
+        .sort((a, b) => b.amount_rappen - a.amount_rappen)[0];
+      return n ? this.chf(n.amount_rappen) : '';
+    },
+    sparHinweis() {
+      return this.normalJahrChf ? `statt CHF ${this.normalJahrChf} im Jahr, 2 Monate gratis` : '2 Monate gratis';
+    },
+    // s6-B10 (Entscheid 7), gleicher Wortlaut wie /abo (abo-verwalten). «jederzeit kündbar»
+    // ist eine Vertragsaussage und fällt weg; «ohne Kreditkarte» deckt stripe-checkout
+    // (payment_method_collection 'if_required'), aber nur im Gratismonat.
+    // Nachbesserung 24.09.2026: (W1) Gratis-Versprechen nur bei trialBerechtigt === true,
+    // Rückkehrer lesen den Preis ohne Gratismonat, unbekannt = vorsichtiger Wortlaut;
+    // (K1) Betrag passend zum Umschalter (Monat/Jahr); (K3) ohne geladene plan_prices-Zeile
+    // kein Betrag im Satz (die Karte behält ihren Anzeigewert).
+    einleitung() {
+      const zeile = this.billing === 'year' ? this.zeileJahr : this.zeileMonat;
+      const betrag = zeile
+        ? (this.billing === 'year' ? `CHF ${this.preisJahrChf} im Jahr` : `CHF ${this.preisMonatChf} im Monat`)
+        : '';
+      const danach = betrag ? ` Danach zahlst du ${betrag}.` : '';
+      if (this.trialBerechtigt === true) return `Der erste Monat im Abo ist gratis, ohne Kreditkarte.${danach}`;
+      if (this.trialBerechtigt === false) return betrag ? `Das Abo kostet ${betrag}.` : '';
+      return `Beim ersten Abo ist der erste Monat gratis, ohne Kreditkarte.${danach}`;
+    },
+    // user_id (sub) aus dem JWT fuer den expliziten Filter (RLS-Admin-Zweig, wie abo-verwalten).
+    userId() {
+      try {
+        const part = String(this.authToken || '').replace(/^Bearer\s+/i, '').split('.')[1];
+        if (!part) return '';
+        const json = JSON.parse(decodeURIComponent(escape(atob(part.replace(/-/g, '+').replace(/_/g, '/')))));
+        return (json && json.sub) ? String(json.sub) : '';
+      } catch (e) { return ''; }
+    },
   },
+  watch: {
+    'content.supabaseUrl'() { this.ladePreise(); this.ladeTrial(); },
+    'content.apiKey'() { this.ladePreise(); this.ladeTrial(); },
+    'content.authToken'() { this.ladeTrial(); },
+  },
+  mounted() { this.ladePreise(); this.ladeTrial(); },
   methods: {
     // Altwerte, die auf den Instanzen gebunden sind, beim Rendern auf das heutige
     // Ziel umschreiben. Wortlaut und Begruendung wie in coded-component-header-pro;
@@ -171,6 +234,57 @@ export default {
       return REDIRECT[String(v).trim()] || String(v);
     },
     emitEvent(name, payload) { this.$emit('trigger-event', { name, event: payload || {} }); },
+    chf(rappen) {
+      const v = (Number(rappen) || 0) / 100;
+      return Number.isInteger(v) ? String(v) : v.toFixed(2);
+    },
+    // Fix-Runde 24.09.2026 (s6-B02): plan_prices ist oeffentlich lesbar (Policy
+    // plan_prices_public_read, qual true), darum genuegt der Anon-Key. Ein Fehler hier
+    // blockiert nichts: die Karte behaelt ihren Anzeigewert, der Bezugspreis fällt weg.
+    // Nachbesserung 24.09.2026 (W1): dieselbe Abfrage wie abo-verwalten und stripe-checkout
+    // «Trial prüfen». Policy subscriptions_select_own_or_admin, darum Filter auf die eigene
+    // user_id Pflicht. Ohne user_id kein Aufruf (bleibt null).
+    async ladeTrial() {
+      const uid = this.userId;
+      if (!this.baseUrl || !this.apiKey || !uid) { this.trialBerechtigt = null; return; }
+      try {
+        const res = await this.fetchWithTimeout(
+          `${this.baseUrl}/rest/v1/subscriptions?user_id=eq.${encodeURIComponent(uid)}&select=id&limit=1`,
+          { headers: { ...this.authHeaders } },
+          10000,
+        );
+        if (!res || !res.ok) {
+          this.trialBerechtigt = null;
+          try { console.warn(`[abo-auswahl] subscriptions nicht geladen (HTTP ${res && res.status})`); } catch (_) { /* ignore */ }
+          return;
+        }
+        const rows = await res.json().catch(() => null);
+        this.trialBerechtigt = Array.isArray(rows) ? rows.length === 0 : null;
+      } catch (e) {
+        this.trialBerechtigt = null;
+        try { console.warn('[abo-auswahl] subscriptions nicht geladen'); } catch (_) { /* ignore */ }
+      }
+    },
+    async ladePreise() {
+      if (!this.baseUrl || !this.apiKey) return;
+      try {
+        const res = await this.fetchWithTimeout(
+          `${this.baseUrl}/rest/v1/plan_prices?select=plan,interval,active,amount_rappen,stripe_price_id&plan=eq.basis`,
+          { headers: { apikey: this.apiKey } },
+          10000,
+        );
+        if (!res || !res.ok) {
+          try { console.warn(`[abo-auswahl] plan_prices nicht geladen (HTTP ${res && res.status})`); } catch (_) { /* ignore */ }
+          return;
+        }
+        const rows = await res.json().catch(() => null);
+        this.preise = Array.isArray(rows)
+          ? rows.filter(r => r && r.stripe_price_id && Number(r.amount_rappen) > 0)
+          : [];
+      } catch (e) {
+        try { console.warn('[abo-auswahl] plan_prices nicht geladen'); } catch (_) { /* ignore */ }
+      }
+    },
     selectPlan(plan) { this.selected = plan; },
 
     // fetch mit Timeout (AbortController) — bricht haengende Requests nach ms ab, damit der
