@@ -11,13 +11,17 @@
         <!-- Billing Toggle -->
         <div class="abo-toggle">
           <button
+            type="button"
             class="abo-toggle__btn"
             :class="{ 'abo-toggle__btn--active': billing === 'month' }"
+            :aria-pressed="billing === 'month' ? 'true' : 'false'"
             @click="billing = 'month'"
           >Monatlich</button>
           <button
+            type="button"
             class="abo-toggle__btn"
             :class="{ 'abo-toggle__btn--active': billing === 'year' }"
+            :aria-pressed="billing === 'year' ? 'true' : 'false'"
             @click="billing = 'year'"
           >Jährlich <span class="abo-toggle__save">2 Monate gratis</span></button>
         </div>
@@ -44,6 +48,7 @@
             <li><svg class="hrk-icon hrk-icon--sm abo-card__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="5,12.5 10,17.5 19,7"/></svg>Mitarbeitende & Dokumente-Upload</li>
           </ul>
           <button
+            type="button"
             class="hrk-btn hrk-btn--primary abo-card__cta"
             :disabled="busy"
             @click.stop="startCheckout('basis')"
@@ -64,7 +69,7 @@
 
       <!-- Später entscheiden -->
       <div class="abo-later">
-        <button class="abo-later__btn" :disabled="busy" @click="skipForNow">Noch nicht, ich schau mich erst um</button>
+        <button type="button" class="abo-later__btn" :disabled="busy" @click="skipForNow">Noch nicht, ich schau mich erst um</button>
       </div>
 
     </main>
