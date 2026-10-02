@@ -391,3 +391,26 @@ describe('F29 Nachbesserung: Trial-Berechtigung', () => {
     expect(einl(w)).toBe('Der erste Monat im Abo ist gratis, ohne Kreditkarte. Danach zahlst du CHF 290 im Jahr.');
   });
 });
+
+// Block 2 G (I13#10, K3): Umschalter sind echte Schaltflaechen mit Zustand, die Kartenwahl hat einen echten Button
+describe('Block 2 G: Tastatur und Screenreader', () => {
+  it('Monatlich/Jaehrlich: type=button und aria-pressed folgt der Auswahl', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const w = mountComponent();
+    const [monat, jahr] = w.findAll('.abo-toggle__btn');
+    expect(monat.attributes('type')).toBe('button');
+    expect(monat.attributes('aria-pressed')).toBe('true');
+    expect(jahr.attributes('aria-pressed')).toBe('false');
+    await jahr.trigger('click');
+    expect(monat.attributes('aria-pressed')).toBe('false');
+    expect(jahr.attributes('aria-pressed')).toBe('true');
+  });
+
+  it('I13#10: die Karte hat einen echten Button, per Tastatur erreichbar', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const w = mountComponent();
+    const cta = w.find('.abo-card .abo-card__cta');
+    expect(cta.element.tagName).toBe('BUTTON');
+    expect(cta.attributes('type')).toBe('button');
+  });
+});
