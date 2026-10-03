@@ -487,7 +487,7 @@ export default {
   --hrk-radius-pill: 6px;
   --hrk-shadow-card: 0 1px 2px rgba(40,35,30,.05);
   --hrk-shadow-pop: 0 1px 2px rgba(40,35,30,.05);
-  --hrk-focus-ring: 0 0 0 3px rgba(51,71,91,.35);
+  --hrk-focus-ring: 0 0 0 2px var(--hrk-surface), 0 0 0 4px var(--hrk-bordeaux);
 
   /* --- Tap-Flaechen (Handy zuerst) --- */
   --hrk-tap-min: 44px;
@@ -542,8 +542,8 @@ export default {
 .hrk-btn:focus-visible { outline: none; box-shadow: var(--hrk-focus-ring); }
 .hrk-btn--primary   { background: var(--hrk-bordeaux); color: var(--hrk-on-primary); }
 .hrk-btn--primary:hover { background: var(--hrk-bordeaux-dark); }
-.hrk-btn--secondary { background: var(--hrk-surface); color: var(--hrk-schiefer); border-color: var(--hrk-border-strong); }
-.hrk-btn--secondary:hover { background: var(--hrk-schiefer-soft); }
+.hrk-btn--secondary { background: var(--hrk-surface); color: var(--hrk-bordeaux); border-color: var(--hrk-border-strong); }
+.hrk-btn--secondary:hover { background: var(--hrk-bordeaux-soft); border-color: var(--hrk-bordeaux); }
 .hrk-btn--ghost     { background: transparent; color: var(--hrk-schiefer); }
 .hrk-btn--ghost:hover { background: var(--hrk-schiefer-soft); }
 .hrk-btn[disabled] { opacity: .5; cursor: not-allowed; }
@@ -604,7 +604,7 @@ export default {
 }
 .abo-toggle__btn--active {
   background: var(--hrk-surface);
-  color: var(--hrk-schiefer);
+  color: var(--hrk-bordeaux);
   font-weight: var(--hrk-fw-semibold);
   box-shadow: var(--hrk-shadow);
 }
@@ -612,8 +612,8 @@ export default {
 .abo-toggle__save {
   font-size: var(--hrk-fs-small);
   font-weight: var(--hrk-fw-semibold);
-  background: var(--hrk-schiefer-soft);
-  color: var(--hrk-schiefer);
+  background: var(--hrk-bordeaux-soft);
+  color: var(--hrk-bordeaux);
   padding: 0.1rem 0.45rem;
   border-radius: var(--hrk-radius-field);
 }
@@ -645,9 +645,9 @@ export default {
   border-width: 2px;
 }
 .abo-card:hover { border-color: var(--hrk-schiefer); }
-/* Ausgewaehlt: ruhiger Zustand, analog .hrk-radio--selected — Schiefer-Rand + zarte Flaeche, kein Glow
-   (Design-Umsetzung 23.09.2026: Auswahl-Zustaende sind Schiefer, Bordeaux nur der Haupt-Knopf) */
-.abo-card--selected { border-color: var(--hrk-schiefer); background: var(--hrk-schiefer-soft); }
+/* Ausgewaehlt: ruhiger Zustand, analog .hrk-radio--selected — Bordeaux-Rand + zarte Flaeche, kein Glow
+   (Variante C «Bordeaux leise» 03.10.2026: Auswahl-Zustaende sind Bordeaux, Flaechen zart) */
+.abo-card--selected { border-color: var(--hrk-bordeaux); background: var(--hrk-bordeaux-soft); }
 .abo-card--highlight { border-color: var(--hrk-schiefer); }
 
 .abo-card__badge {
@@ -681,8 +681,8 @@ export default {
 
 /* Fehler */
 .abo-error { color: var(--hrk-danger); font-size: var(--hrk-fs-small); text-align: center; margin-top: 1rem; }
-.abo-error__link { color: var(--hrk-schiefer); font-weight: var(--hrk-fw-semibold); text-decoration: underline; text-underline-offset: 2px; }
-.abo-error__link:hover { color: var(--hrk-text); }
+.abo-error__link { color: var(--hrk-bordeaux); font-weight: var(--hrk-fw-semibold); text-decoration: underline; text-underline-offset: 2px; }
+.abo-error__link:hover { color: var(--hrk-bordeaux-dark); }
 .abo-error__link:focus-visible { outline: none; box-shadow: var(--hrk-focus-ring); border-radius: var(--hrk-radius-field); }
 
 /* Später */
