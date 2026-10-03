@@ -58,7 +58,7 @@
       </div>
 
       <!-- Fehler -->
-      <p v-if="errorMsg" class="abo-error" role="alert">{{ errorMsg }}</p>
+      <p v-if="errorMsg" class="abo-error" role="alert">{{ errorMsg }}<template v-if="errorLink"> <a class="abo-error__link" :href="aboUrl">Zur Abo-Verwaltung</a></template></p>
 
       <!-- Hinweis Einzelpreise -->
       <!-- W32 (Neukunden-Audit 24.08.2026, von Richard bestaetigt 25.08.): diese Zeile
@@ -111,6 +111,9 @@ export default {
       selected: null,
       busy: false,
       errorMsg: '',
+      // Nach-Audit 03.10.2026 ([82]): true = unter der Fehlermeldung steht der Link zur Abo-Verwaltung
+      // (nur bei «du hast schon ein Abo»).
+      errorLink: false,
       // Fix-Runde 24.09.2026 (s6-B02): plan_prices-Zeilen des Basis-Plans (aktive und
       // inaktive Normalpreise). Leer, solange nichts geladen ist.
       preise: [],
@@ -169,6 +172,9 @@ export default {
     // weweb-ww-config-default-erreicht-live-nie), darum dieselbe Umschreibung
     // beim Rendern wie im Kopf.
     onboardingUrl() { return this.zielUmbiegen((this.content && this.content.onboardingUrl) || '/vertrag-erstellen'); },
+    // Nach-Audit 03.10.2026 ([82]): Ziel fuer Kunden, die schon ein Abo haben. Eigene Property, mit
+    // festem Rueckfall, damit auch bestehende Instanzen ohne den neuen Wert den Link bekommen.
+    aboUrl() { return (this.content && this.content.aboUrl) || '/abo'; },
     checkoutReturnUrl() { return this.zielUmbiegen((this.content && this.content.checkoutReturnUrl) || '/vertrag-erstellen'); },
 
     // ---- Fix-Runde 24.09.2026 (Vollaudit Kundensicht, F29) ----
@@ -345,6 +351,7 @@ export default {
 
     async startCheckout(planKey) {
       this.errorMsg = '';
+      this.errorLink = false;
       if (!this.authToken) { this.errorMsg = 'Du bist nicht eingeloggt. Bitte melde dich an.'; return; }
       const priceId = this.billing === 'year' ? this.priceIds.basis_year : this.priceIds.basis_month;
 
@@ -375,7 +382,18 @@ export default {
         }
         const data = await res.json().catch(() => ({}));
         if (!res.ok || !data.url) {
-          this.errorMsg = 'Der Checkout konnte nicht gestartet werden. Versuch es gleich nochmal.';
+          // Nach-Audit 03.10.2026 ([82]): zwei Fehler sind keine «gleich nochmal»-Fehler.
+          // 409 / ALREADY_SUBSCRIBED: ein Retry klappt nie, der Weg fuehrt in die Abo-Verwaltung.
+          // 503: Server-Hickser (auch technische Texte wie STRIPE_NOT_CONFIGURED), darum ein
+          // eigener fester Satz statt des Serverwortlauts.
+          if (res.status === 409 || (data && data.code === 'ALREADY_SUBSCRIBED')) {
+            this.errorMsg = 'Du hast schon ein Abo. Änderungen daran machst du in der Abo-Verwaltung.';
+            this.errorLink = true;
+          } else if (res.status === 503) {
+            this.errorMsg = 'Das klappt gerade nicht. Versuch es in ein paar Minuten nochmals.';
+          } else {
+            this.errorMsg = 'Der Checkout konnte nicht gestartet werden. Versuch es gleich nochmal.';
+          }
           this.emitEvent('error', { reason: 'checkout', status: res.status, detail: (data && (data.error || data.message)) || '' });
           return;
         }
@@ -663,6 +681,9 @@ export default {
 
 /* Fehler */
 .abo-error { color: var(--hrk-danger); font-size: var(--hrk-fs-small); text-align: center; margin-top: 1rem; }
+.abo-error__link { color: var(--hrk-schiefer); font-weight: var(--hrk-fw-semibold); text-decoration: underline; text-underline-offset: 2px; }
+.abo-error__link:hover { color: var(--hrk-text); }
+.abo-error__link:focus-visible { outline: none; box-shadow: var(--hrk-focus-ring); border-radius: var(--hrk-radius-field); }
 
 /* Später */
 .abo-later { text-align: center; margin-top: 2rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }

@@ -38,6 +38,13 @@ export default {
       bindable: true,
       defaultValue: '/vertrag-erstellen',
     },
+    aboUrl: {
+      label: { en: 'Subscription management URL', de: 'Abo-Verwaltung-URL' },
+      type: 'Text',
+      section: 'settings',
+      bindable: true,
+      defaultValue: '/abo',
+    },
     checkoutReturnUrl: {
       label: { en: 'Checkout return URL', de: 'URL nach Checkout' },
       type: 'Text',

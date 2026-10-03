@@ -188,6 +188,85 @@ describe('Stripe-Checkout', () => {
     expect(window.location.href).toBe('http://localhost/');
   });
 
+  // Nach-Audit 03.10.2026 (Audit [82]): 409 und 503 landeten beide als «Versuch es gleich
+  // nochmal», obwohl ein Retry bei 409 nie klappt. Der Kunde mit laufendem Abo erfuhr nicht,
+  // dass der Weg ueber /abo fuehrt. Je eigene, ehrliche Meldung.
+  it('[82] 409 ALREADY_SUBSCRIBED: eigene Meldung mit Link auf /abo, kein «nochmal versuchen»', async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: false,
+      status: 409,
+      json: async () => ({ error: 'Du hast bereits ein aktives Abo. Einen Plan-Wechsel machst du im Abo-Portal, nicht über einen neuen Checkout.', code: 'ALREADY_SUBSCRIBED' }),
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const wrapper = mountComponent({ authToken: 'test-jwt' });
+    await wrapper.find('.abo-card__cta').trigger('click');
+    await flush();
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.vm.errorMsg).toContain('schon ein Abo');
+    expect(wrapper.vm.errorMsg).not.toMatch(/nochmal/i);
+    const link = wrapper.find('.abo-error a');
+    expect(link.exists()).toBe(true);
+    expect(link.attributes('href')).toBe('/abo');
+    expect(wrapper.find('.abo-error').text()).not.toMatch(/[—–]/);
+    expect(wrapper.vm.busy).toBe(false);
+    const errorEvent = (wrapper.emitted('trigger-event') || []).map(([e]) => e).find((e) => e.name === 'error');
+    expect(errorEvent.event.status).toBe(409);
+  });
+
+  it('[82] 409 ohne Statuscode-Treffer, aber code ALREADY_SUBSCRIBED: gleiche Meldung', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: false,
+      status: 400,
+      json: async () => ({ code: 'ALREADY_SUBSCRIBED' }),
+    })));
+    const wrapper = mountComponent({ authToken: 'test-jwt' });
+    await wrapper.find('.abo-card__cta').trigger('click');
+    await flush();
+    await wrapper.vm.$nextTick();
+    expect(wrapper.vm.errorMsg).toContain('schon ein Abo');
+    expect(wrapper.find('.abo-error a').exists()).toBe(true);
+  });
+
+  it('[82] 503: ehrliche Meldung «klappt gerade nicht», ohne Link und ohne Serverwortlaut', async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: false,
+      status: 503,
+      // Der Server schickt hier auch technische Texte (STRIPE_NOT_CONFIGURED); die gehoeren nicht auf den Schirm.
+      json: async () => ({ error: 'Stripe nicht konfiguriert. Bitte STRIPE_SECRET_KEY in den Supabase Edge Function Secrets setzen.', code: 'STRIPE_NOT_CONFIGURED' }),
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const wrapper = mountComponent({ authToken: 'test-jwt' });
+    await wrapper.find('.abo-card__cta').trigger('click');
+    await flush();
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.vm.errorMsg).toBe('Das klappt gerade nicht. Versuch es in ein paar Minuten nochmals.');
+    expect(wrapper.vm.errorMsg).not.toContain('STRIPE');
+    expect(wrapper.find('.abo-error a').exists()).toBe(false);
+    expect(wrapper.vm.busy).toBe(false);
+  });
+
+  it('[82] ein spaeterer, anderer Fehler raeumt den Link wieder ab', async () => {
+    const antworten = [
+      { ok: false, status: 409, json: async () => ({ code: 'ALREADY_SUBSCRIBED' }) },
+      { ok: false, status: 500, json: async () => ({ error: 'Interner Fehler' }) },
+    ];
+    vi.stubGlobal('fetch', vi.fn(async () => antworten.shift()));
+    const wrapper = mountComponent({ authToken: 'test-jwt' });
+    await wrapper.find('.abo-card__cta').trigger('click');
+    await flush();
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find('.abo-error a').exists()).toBe(true);
+    await wrapper.find('.abo-card__cta').trigger('click');
+    await flush();
+    await wrapper.vm.$nextTick();
+    expect(wrapper.vm.errorMsg).toBe('Der Checkout konnte nicht gestartet werden. Versuch es gleich nochmal.');
+    expect(wrapper.find('.abo-error a').exists()).toBe(false);
+  });
+
   it('«Noch nicht»-Link feuert das skipped-Event', async () => {
     const wrapper = mountComponent();
     await wrapper.find('.abo-later__btn').trigger('click');
