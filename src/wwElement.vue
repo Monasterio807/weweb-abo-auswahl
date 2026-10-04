@@ -405,7 +405,7 @@ export default {
           this.errorMsg = 'Verbindung dauert zu lange, bitte nochmals versuchen.';
           this.emitEvent('error', { reason: 'timeout' });
         } else {
-          this.errorMsg = 'Netzwerkfehler. Bitte versuche es nochmal.';
+          this.errorMsg = 'Die Verbindung hat nicht geklappt. Prüf dein Internet und versuch es nochmal.';
           this.emitEvent('error', { reason: 'network' });
         }
       } finally { this.busy = false; }
