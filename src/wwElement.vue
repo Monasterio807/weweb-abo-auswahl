@@ -427,7 +427,7 @@ export default {
 -->
 <style scoped>
 /* ============================================================
-   Imploya — Design-Tokens (einheitliches App-Design)
+   imploya — Design-Tokens (einheitliches App-Design)
    Eine Datei fuer ALLE Coded Components (vertrag-anzeigen,
    mein-betrieb, meine-faelle, Kuendigung, Krankmeldung, ...).
    Stand: 2026-06-17 · Variante A (Auffrischung): flacher Schatten, feinere

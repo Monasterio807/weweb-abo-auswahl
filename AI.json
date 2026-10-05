@@ -1,11 +1,11 @@
 {
   "metadata": {
     "name": "weweb-abo-auswahl",
-    "description": "Ein Plan Imploya CHF 29/Mt (bzw. CHF 290 pro Jahr, 2 Monate gratis) mit Monats/Jahres-Toggle und Stripe-Checkout. 30-Tage-Trial fuer Neukunden automatisch. Plus-Plan seit 02.08.2026 eingestellt.",
+    "description": "Ein Plan imploya CHF 29/Mt (bzw. CHF 290 pro Jahr, 2 Monate gratis) mit Monats/Jahres-Toggle und Stripe-Checkout. 30-Tage-Trial fuer Neukunden automatisch. Plus-Plan seit 02.08.2026 eingestellt.",
     "keywords": ["abo", "plan", "stripe", "checkout", "imploya", "basis"],
     "features": [
       "Billing Toggle: Monatlich / Jaehrlich (2 Monate gratis)",
-      "Imploya CHF 29/Mt bzw. CHF 290/Jahr",
+      "imploya CHF 29/Mt bzw. CHF 290/Jahr",
       "30-Tage-Trial fuer Neukunden via stripe-checkout",
       "Netzwerk-Timeout (15s) beim Checkout, 401-Token-Refresh-Retry"
     ],
@@ -31,7 +31,7 @@
   "specifications": [
     "Stripe-Checkout via POST /functions/v1/stripe-checkout mit price_id.",
     "Benoetigt authToken (User-JWT), mit Refresh-Retry bei 401.",
-    "Billing Toggle wechselt zwischen Monats- und Jahrespreis; ein einziger Plan (Basis/Imploya)."
+    "Billing Toggle wechselt zwischen Monats- und Jahrespreis; ein einziger Plan (Basis/imploya)."
   ],
   "examples": [
     { "description": "Minimales Setup", "example": "{\"authToken\":\"Bearer <jwt>\",\"apiKey\":\"sb_publishable_...\",\"checkoutReturnUrl\":\"/dashboard\"}" }

@@ -1,7 +1,7 @@
 // =============================================================================
 // wwElement.test.js — weweb-abo-auswahl (Testabdeckung Phase 2b)
 // v4 (02.08.2026): Ein-Plan-Modell (Plus eingestellt) — Tests auf die eine
-// verbleibende Karte (Basis / «Imploya») umgestellt: Preis, Monats/Jahres-
+// verbleibende Karte (Basis / «imploya») umgestellt: Preis, Monats/Jahres-
 // Toggle mit exakter Preislogik (290/«2 Monate gratis»), Auswahl-Zustand,
 // Stripe-Checkout (Payload mit korrekter price_id, Header, Events,
 // Fehlerpfade) und Design-System-Regression (.hrk-*-Klassen).
@@ -44,7 +44,7 @@ afterEach(() => {
 });
 
 describe('Ein-Plan-Modell: genau eine Karte mit Namen, Preis und Features', () => {
-  // Fix-Runde 24.09.2026: Planname «Basis» statt «Imploya» (Entscheid 9, s6-B11), Leistungszeilen
+  // Fix-Runde 24.09.2026: Planname «Basis» statt «imploya» (Entscheid 9, s6-B11), Leistungszeilen
   // ohne Gedankenstrich und im Wortlaut von /abo (s1-B15). Ohne supabaseUrl wird plan_prices
   // nicht geladen: die Karte zeigt ihren Anzeigewert 29 (siehe preisMonatChf).
   it('rendert genau eine Karte: Basis (CHF 29/Monat)', () => {
@@ -327,7 +327,7 @@ describe('Design-System-Regression (.hrk-* Tokens/Klassen)', () => {
     const wrapper = mountComponent();
     expect(wrapper.find('.hrk-root').exists()).toBe(true);
     expect(wrapper.find('.hrk-page').exists()).toBe(true);
-    // Fix-Runde 24.09.2026 (Entscheid 9, s6-B11): «Wähle dein Abo» statt «Wähle dein Imploya-Abo».
+    // Fix-Runde 24.09.2026 (Entscheid 9, s6-B11): «Wähle dein Abo» statt «Wähle dein imploya-Abo».
     expect(wrapper.find('.hrk-h1').text()).toBe('Wähle dein Abo');
     // Eine Plan-Karte baut auf .hrk-card auf
     expect(wrapper.findAll('.hrk-card').length).toBe(1);
@@ -406,7 +406,7 @@ describe('F29: Preise aus plan_prices (Entscheid 8)', () => {
     expect(wrapper.text()).not.toContain('jederzeit kündbar');
     expect(wrapper.find('.abo-later__btn').text()).toBe('Noch nicht, ich schau mich erst um');
     expect(wrapper.text()).not.toMatch(/[—–]/);
-    expect(wrapper.text()).not.toContain('Imploya');
+    expect(wrapper.text()).not.toContain('imploya');
   });
 });
 
