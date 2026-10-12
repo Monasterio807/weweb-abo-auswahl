@@ -437,13 +437,13 @@ export default {
 
 :root, .hrk-root {
   /* --- Markenfarben (aus Designplan v2, markenstimmig) --- */
-  --hrk-bordeaux:        #7B2D3B;  /* Primaer: Knoepfe, Links, aktive Schritte */
-  --hrk-bordeaux-dark:   #5E2129;  /* Hover/Pressed */
-  --hrk-bordeaux-soft:   #F3E7E9;  /* zarte Flaeche (aktive Zeile, Chip-BG) */
+  --hrk-bordeaux:        #72323C;  /* Primaer: Knoepfe, Links, aktive Schritte */
+  --hrk-bordeaux-dark:   #5A2630;  /* Hover/Pressed */
+  --hrk-bordeaux-soft:   #F1E7E9;  /* zarte Flaeche (aktive Zeile, Chip-BG) */
   --hrk-creme: #F7F5F1;  /* Seitenhintergrund (Variante A: klarer/ruhiger) */
   --hrk-anthrazit: #241F1C;  /* Haupttext */
-  --hrk-gold:            #C9A24B;  /* Akzent, sehr sparsam (Auszeichnung) */
-  --hrk-gold-dark:       #B8902F;  /* Gold Hover/Pressed */
+  --hrk-gold:            #C3A359;  /* Akzent, sehr sparsam (Auszeichnung) */
+  --hrk-gold-dark:       #A98A45;  /* Gold Hover/Pressed */
   --hrk-on-dark:         #FFFFFF;  /* Text/Icons auf dunklem (Bordeaux) Grund */
   --hrk-on-primary:     #FFFFFF;  /* Text/Icons auf primaer (Bordeaux) gefaerbten Flaechen */
   --hrk-on-dark-strong:  rgba(255,255,255,.92);
@@ -505,7 +505,7 @@ export default {
   --hrk-schiefer-dark: #243444;
   --hrk-schiefer-soft: #EBEEF1;
   --hrk-font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
-  --hrk-font-brand: "Fraunces", Georgia, serif;
+  --hrk-font-brand: "Gloock", Georgia, serif;
   --hrk-fs-xs: 0.8125rem;
   --hrk-ls-caps: .06em;
   --hrk-radius-field: 6px;
