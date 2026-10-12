@@ -390,9 +390,9 @@ export default {
             this.errorMsg = 'Du hast schon ein Abo. Änderungen daran machst du in der Abo-Verwaltung.';
             this.errorLink = true;
           } else if (res.status === 503) {
-            this.errorMsg = 'Das klappt gerade nicht. Versuch es in ein paar Minuten nochmals.';
+            this.errorMsg = 'Das klappt gerade nicht. Versuche es in ein paar Minuten nochmals.';
           } else {
-            this.errorMsg = 'Der Checkout konnte nicht gestartet werden. Versuch es gleich nochmal.';
+            this.errorMsg = 'Der Checkout konnte nicht gestartet werden. Versuche es gleich nochmal.';
           }
           this.emitEvent('error', { reason: 'checkout', status: res.status, detail: (data && (data.error || data.message)) || '' });
           return;
@@ -405,7 +405,7 @@ export default {
           this.errorMsg = 'Verbindung dauert zu lange, bitte nochmals versuchen.';
           this.emitEvent('error', { reason: 'timeout' });
         } else {
-          this.errorMsg = 'Die Verbindung hat nicht geklappt. Prüf dein Internet und versuch es nochmal.';
+          this.errorMsg = 'Die Verbindung hat nicht geklappt. Prüfe dein Internet und versuche es nochmal.';
           this.emitEvent('error', { reason: 'network' });
         }
       } finally { this.busy = false; }

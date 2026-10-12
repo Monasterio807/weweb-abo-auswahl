@@ -178,7 +178,7 @@ describe('Stripe-Checkout', () => {
     await wrapper.find('.abo-card__cta').trigger('click');
     await flush();
 
-    expect(wrapper.vm.errorMsg).toBe('Der Checkout konnte nicht gestartet werden. Versuch es gleich nochmal.');
+    expect(wrapper.vm.errorMsg).toBe('Der Checkout konnte nicht gestartet werden. Versuche es gleich nochmal.');
     expect(wrapper.vm.busy).toBe(false);
     const events = (wrapper.emitted('trigger-event') || []).map(([e]) => e);
     const errorEvent = events.find((e) => e.name === 'error');
@@ -188,7 +188,7 @@ describe('Stripe-Checkout', () => {
     expect(window.location.href).toBe('http://localhost/');
   });
 
-  // Nach-Audit 03.10.2026 (Audit [82]): 409 und 503 landeten beide als «Versuch es gleich
+  // Nach-Audit 03.10.2026 (Audit [82]): 409 und 503 landeten beide als «Versuche es gleich
   // nochmal», obwohl ein Retry bei 409 nie klappt. Der Kunde mit laufendem Abo erfuhr nicht,
   // dass der Weg ueber /abo fuehrt. Je eigene, ehrliche Meldung.
   it('[82] 409 ALREADY_SUBSCRIBED: eigene Meldung mit Link auf /abo, kein «nochmal versuchen»', async () => {
@@ -243,7 +243,7 @@ describe('Stripe-Checkout', () => {
     await flush();
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.vm.errorMsg).toBe('Das klappt gerade nicht. Versuch es in ein paar Minuten nochmals.');
+    expect(wrapper.vm.errorMsg).toBe('Das klappt gerade nicht. Versuche es in ein paar Minuten nochmals.');
     expect(wrapper.vm.errorMsg).not.toContain('STRIPE');
     expect(wrapper.find('.abo-error a').exists()).toBe(false);
     expect(wrapper.vm.busy).toBe(false);
@@ -263,7 +263,7 @@ describe('Stripe-Checkout', () => {
     await wrapper.find('.abo-card__cta').trigger('click');
     await flush();
     await wrapper.vm.$nextTick();
-    expect(wrapper.vm.errorMsg).toBe('Der Checkout konnte nicht gestartet werden. Versuch es gleich nochmal.');
+    expect(wrapper.vm.errorMsg).toBe('Der Checkout konnte nicht gestartet werden. Versuche es gleich nochmal.');
     expect(wrapper.find('.abo-error a').exists()).toBe(false);
   });
 
