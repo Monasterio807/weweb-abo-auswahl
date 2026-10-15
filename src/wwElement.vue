@@ -1,74 +1,89 @@
 <template>
   <div class="hrk-root abo-root">
-    <main class="abo-page hrk-page">
+    <main class="abo-main hrk-page">
 
-      <!-- Header -->
-      <div class="abo-header">
-        <!-- Fix-Runde 24.09.2026 (s6-B11 Entscheid 9, s6-B10 Entscheid 7): Planname «Basis», Gratismonat-Satz wie auf /abo, Preis aus plan_prices. -->
-        <h1 class="hrk-h1">Wähle dein Abo</h1>
-        <p v-if="einleitung" class="hrk-muted">{{ einleitung }}</p>
-
-        <!-- Billing Toggle -->
-        <div class="abo-toggle">
-          <button
-            type="button"
-            class="abo-toggle__btn"
-            :class="{ 'abo-toggle__btn--active': billing === 'month' }"
-            :aria-pressed="billing === 'month' ? 'true' : 'false'"
-            @click="billing = 'month'"
-          >Monatlich</button>
-          <button
-            type="button"
-            class="abo-toggle__btn"
-            :class="{ 'abo-toggle__btn--active': billing === 'year' }"
-            :aria-pressed="billing === 'year' ? 'true' : 'false'"
-            @click="billing = 'year'"
-          >Jährlich <span class="abo-toggle__save">2 Monate gratis</span></button>
+      <!-- Kopf: Archivo-Label, grosser Gloock-Titel, Einleitung (Stil A, Entscheid 13.10.2026) -->
+      <header class="abo-top">
+        <div class="abo-wrap abo-header">
+          <p class="abo-lab" aria-hidden="true">Abo</p>
+          <!-- Fix-Runde 24.09.2026 (s6-B11 Entscheid 9, s6-B10 Entscheid 7): Planname «Basis», Gratismonat-Satz wie auf /abo, Preis aus plan_prices. -->
+          <h1 class="hrk-h1 abo-h1">Wähle dein Abo</h1>
+          <p v-if="einleitung" class="hrk-muted abo-intro">{{ einleitung }}</p>
         </div>
-      </div>
+      </header>
 
-      <!-- Plan-Karte (Ein-Plan-Modell seit 02.08.2026, Plus eingestellt) -->
-      <div class="abo-cards abo-cards--single">
+      <!-- Plan (Ein-Plan-Modell seit 02.08.2026, Plus eingestellt): Label-Spalte links, Inhalt rechts, Linien statt Karte -->
+      <section class="abo-band">
+        <div class="abo-wrap abo-cards abo-cards--single">
 
-        <!-- BASIS -->
-        <div class="hrk-card abo-card abo-card--selected" @click="selectPlan('basis')">
-          <h2 class="abo-card__name">Basis</h2>
-          <div class="abo-card__price">
-            <span class="abo-card__amount">CHF {{ billing === 'year' ? preisJahrChf : preisMonatChf }}</span>
-            <span class="abo-card__period">{{ billing === 'year' ? '/Jahr' : '/Monat' }}</span>
+          <!-- BASIS -->
+          <div class="abo-card abo-card--selected" @click="selectPlan('basis')">
+            <div class="abo-card__lab">
+              <span class="abo-nr" aria-hidden="true">01</span>
+              <h2 class="abo-card__name">Basis</h2>
+            </div>
+
+            <div class="abo-card__body">
+              <!-- Billing Toggle: Text-Reiter statt Kasten -->
+              <div class="abo-toggle">
+                <button
+                  type="button"
+                  class="abo-toggle__btn"
+                  :class="{ 'abo-toggle__btn--active': billing === 'month' }"
+                  :aria-pressed="billing === 'month' ? 'true' : 'false'"
+                  @click.stop="billing = 'month'"
+                >Monatlich</button>
+                <button
+                  type="button"
+                  class="abo-toggle__btn"
+                  :class="{ 'abo-toggle__btn--active': billing === 'year' }"
+                  :aria-pressed="billing === 'year' ? 'true' : 'false'"
+                  @click.stop="billing = 'year'"
+                >Jährlich <span class="abo-toggle__save">2 Monate gratis</span></button>
+              </div>
+
+              <div class="abo-card__price">
+                <span class="abo-card__amount">CHF {{ billing === 'year' ? preisJahrChf : preisMonatChf }}</span>
+                <span class="abo-card__period">{{ billing === 'year' ? '/Jahr' : '/Monat' }}</span>
+              </div>
+              <!-- Fix-Runde 24.09.2026 (s6-B02, Entscheid 8): Bezugspreis = inaktive Normalpreis-Zeile aus plan_prices, nie 12 x Aktionspreis. -->
+              <p v-if="billing === 'year'" class="abo-card__saving">{{ sparHinweis }}</p>
+              <p class="abo-card__tagline">Alles, was dein Betrieb für die HR-Basics braucht.</p>
+              <ul class="abo-card__features">
+                <li><svg class="hrk-icon hrk-icon--sm abo-card__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="5,12.5 10,17.5 19,7"/></svg>30 Fragen an Emily pro Monat</li>
+                <li><svg class="hrk-icon hrk-icon--sm abo-card__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="5,12.5 10,17.5 19,7"/></svg>15 Dokumente pro Monat</li>
+                <li><svg class="hrk-icon hrk-icon--sm abo-card__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="5,12.5 10,17.5 19,7"/></svg>Vertrag, Kündigung, Krankmeldung</li>
+                <li><svg class="hrk-icon hrk-icon--sm abo-card__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="5,12.5 10,17.5 19,7"/></svg>Zeugnis, Verwarnung, Stelleninserat</li>
+                <li><svg class="hrk-icon hrk-icon--sm abo-card__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="5,12.5 10,17.5 19,7"/></svg>Mitarbeitende & Dokumente-Upload</li>
+              </ul>
+
+              <!-- Fehler -->
+              <p v-if="errorMsg" class="abo-error" role="alert">{{ errorMsg }}<template v-if="errorLink"> <a class="abo-error__link" :href="aboUrl">Zur Abo-Verwaltung</a></template></p>
+
+              <!-- Die eine Hauptaktion: Schiefer-Text, 2 px Gold-Unterstrich, Pfeil -->
+              <div class="abo-actions">
+                <button
+                  type="button"
+                  class="abo-fw abo-card__cta"
+                  :disabled="busy"
+                  @click.stop="startCheckout('basis')"
+                >{{ busy && selected === 'basis' ? 'Einen Moment …' : 'Jetzt starten' }} <svg class="hrk-icon hrk-icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="4" y1="12" x2="19" y2="12"/><polyline points="13,6 19,12 13,18"/></svg></button>
+              </div>
+
+              <!-- Hinweis Einzelpreise -->
+              <!-- W32 (Neukunden-Audit 24.08.2026, von Richard bestaetigt 25.08.): diese Zeile
+                   steht direkt unter der Abo-Karte (30 Emily-Fragen/Monat inklusive) — hier
+                   gilt der Abo-Preis fuer weitere Fragen, CHF 4, nicht der volle Preis CHF 9
+                   ohne Abo. "Zusätzliche Dokumente CHF 3/Stück" war schon korrekt (Abo-Preis). -->
+              <p class="abo-hint-extra">Zusätzliche Dokumente CHF 3/Stück · Extra Emily-Fragen CHF 4/10 Fragen</p>
+            </div>
           </div>
-          <!-- Fix-Runde 24.09.2026 (s6-B02, Entscheid 8): Bezugspreis = inaktive Normalpreis-Zeile aus plan_prices, nie 12 x Aktionspreis. -->
-          <p v-if="billing === 'year'" class="abo-card__saving">{{ sparHinweis }}</p>
-          <p class="abo-card__tagline">Alles, was dein Betrieb für die HR-Basics braucht.</p>
-          <ul class="abo-card__features">
-            <li><svg class="hrk-icon hrk-icon--sm abo-card__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="5,12.5 10,17.5 19,7"/></svg>30 Fragen an Emily pro Monat</li>
-            <li><svg class="hrk-icon hrk-icon--sm abo-card__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="5,12.5 10,17.5 19,7"/></svg>15 Dokumente pro Monat</li>
-            <li><svg class="hrk-icon hrk-icon--sm abo-card__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="5,12.5 10,17.5 19,7"/></svg>Vertrag, Kündigung, Krankmeldung</li>
-            <li><svg class="hrk-icon hrk-icon--sm abo-card__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="5,12.5 10,17.5 19,7"/></svg>Zeugnis, Verwarnung, Stelleninserat</li>
-            <li><svg class="hrk-icon hrk-icon--sm abo-card__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="5,12.5 10,17.5 19,7"/></svg>Mitarbeitende & Dokumente-Upload</li>
-          </ul>
-          <button
-            type="button"
-            class="hrk-btn hrk-btn--primary abo-card__cta"
-            :disabled="busy"
-            @click.stop="startCheckout('basis')"
-          >{{ busy && selected === 'basis' ? 'Einen Moment …' : 'Jetzt starten' }}</button>
+
         </div>
+      </section>
 
-      </div>
-
-      <!-- Fehler -->
-      <p v-if="errorMsg" class="abo-error" role="alert">{{ errorMsg }}<template v-if="errorLink"> <a class="abo-error__link" :href="aboUrl">Zur Abo-Verwaltung</a></template></p>
-
-      <!-- Hinweis Einzelpreise -->
-      <!-- W32 (Neukunden-Audit 24.08.2026, von Richard bestaetigt 25.08.): diese Zeile
-           steht direkt unter der Abo-Karte (30 Emily-Fragen/Monat inklusive) — hier
-           gilt der Abo-Preis fuer weitere Fragen, CHF 4, nicht der volle Preis CHF 9
-           ohne Abo. "Zusätzliche Dokumente CHF 3/Stück" war schon korrekt (Abo-Preis). -->
-      <p class="abo-hint-extra">Zusätzliche Dokumente CHF 3/Stück · Extra Emily-Fragen CHF 4/10 Fragen</p>
-
-      <!-- Später entscheiden -->
-      <div class="abo-later">
+      <!-- Später entscheiden: Zweitweg, grauer Text mit Haarlinie -->
+      <div class="abo-wrap abo-later">
         <button type="button" class="abo-later__btn" :disabled="busy" @click="skipForNow">Noch nicht, ich schau mich erst um</button>
       </div>
 
@@ -95,7 +110,22 @@
  *   stehen bleiben koennen. Bei Timeout eigene Meldung ("Verbindung dauert zu lange, bitte nochmals
  *   versuchen.") statt der generischen Netzwerkfehler-Meldung, Button wird ueber das bestehende
  *   finally (busy = false) wieder freigegeben.
+ * v6 (14.10.2026, Design-Entscheid 13.10.): nur Optik auf Stil A «Editorial» umgestellt (Linien statt Karte,
+ *   Gloock-Titel, Text-Knopf mit Gold-Unterstrich). Logik, Preise, Texte unveraendert.
  */
+function hrkEnsureBrandFont() {
+  try {
+    const doc = (typeof wwLib !== 'undefined' && wwLib && typeof wwLib.getFrontDocument === 'function')
+      ? wwLib.getFrontDocument()
+      : (typeof document !== 'undefined' ? document : null);
+    if (!doc || !doc.head || doc.getElementById('hrk-fonts-marke')) return;
+    const link = doc.createElement('link');
+    link.id = 'hrk-fonts-marke'; link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=Archivo:wght@500;600&family=Gloock&family=Inter:wght@400;500;600&display=swap';
+    doc.head.appendChild(link);
+  } catch (e) { /* Georgia als Rueckfall */ }
+}
+
 export default {
   props: {
     content: { type: Object, required: true },
@@ -230,7 +260,7 @@ export default {
     'content.apiKey'() { this.ladePreise(); this.ladeTrial(); },
     'content.authToken'() { this.ladeTrial(); },
   },
-  mounted() { this.ladePreise(); this.ladeTrial(); },
+  mounted() { hrkEnsureBrandFont(); this.ladePreise(); this.ladeTrial(); },
   methods: {
     // Altwerte, die auf den Instanzen gebunden sind, beim Rendern auf das heutige
     // Ziel umschreiben. Wortlaut und Begruendung wie in coded-component-header-pro;
@@ -419,88 +449,41 @@ export default {
 };
 </script>
 
-<!--
-  Styles = einheitliches Design-System. Der folgende Block ist eine 1:1-Kopie von
-  WeWeb-Components/Coded-Components-Vorlage/design-tokens.css (Quelle der Wahrheit),
-  gefolgt von komponentenspezifischen Klassen, die ausschliesslich --hrk-*-Tokens nutzen.
-  Nur design-tokens.css aendern und dann hier erneut kopieren.
--->
 <style scoped>
 /* ============================================================
-   imploya — Design-Tokens (einheitliches App-Design)
-   Eine Datei fuer ALLE Coded Components (vertrag-anzeigen,
-   mein-betrieb, meine-faelle, Kuendigung, Krankmeldung, ...).
-   Stand: 2026-06-17 · Variante A (Auffrischung): flacher Schatten, feinere
-   Linien, klarerer Hintergrund, groessere H1, Punkt-Badges. Bordeaux bleibt
-   Primaer-/Headline-Farbe. Baut auf Design_Plan_HRklar_v2 auf.
+   imploya — Design-Tokens, Stand Stil A «Editorial» (Entscheid 13.10.2026).
+   Gekuerzter Auszug aus Coded-Components-Vorlage/design-tokens.css, nur was diese
+   Komponente braucht. Tokens wie in meine-faelle (Pilot-Commit f760e23).
    ============================================================ */
-
 :root, .hrk-root {
-  /* --- Markenfarben (aus Designplan v2, markenstimmig) --- */
-  --hrk-bordeaux:        #72323C;  /* Primaer: Knoepfe, Links, aktive Schritte */
-  --hrk-bordeaux-dark:   #5A2630;  /* Hover/Pressed */
-  --hrk-bordeaux-soft:   #F1E7E9;  /* zarte Flaeche (aktive Zeile, Chip-BG) */
-  --hrk-creme: #F7F5F1;  /* Seitenhintergrund (Variante A: klarer/ruhiger) */
-  --hrk-anthrazit: #241F1C;  /* Haupttext */
-  --hrk-gold:            #C3A359;  /* Akzent, sehr sparsam (Auszeichnung) */
-  --hrk-gold-dark:       #A98A45;  /* Gold Hover/Pressed */
-  --hrk-on-dark:         #FFFFFF;  /* Text/Icons auf dunklem (Bordeaux) Grund */
-  --hrk-on-primary:     #FFFFFF;  /* Text/Icons auf primaer (Bordeaux) gefaerbten Flaechen */
-  --hrk-on-dark-strong:  rgba(255,255,255,.92);
-  --hrk-on-dark-soft:    rgba(255,255,255,.82);
-  --hrk-on-dark-muted:   rgba(255,255,255,.40);
-  --hrk-on-dark-faint:   rgba(255,255,255,.12);
-
-  /* --- Neutrale Flaechen & Linien --- */
-  --hrk-surface:         #FFFFFF;  /* Karten, Eingabefelder */
-  --hrk-surface-muted: #F2EFEA;  /* Sektions-Hintergrund, Tabellenkopf */
-  --hrk-border: #E2DDD5;  /* Linien, Feldraender (Variante A: feiner) */
+  --hrk-bordeaux:        #72323C;  /* nur Links/Namen, nie Knopf-Flaeche */
+  --hrk-bordeaux-dark:   #5A2630;
+  --hrk-bordeaux-soft:   #F1E7E9;
+  --hrk-creme: #F7F5F1;
+  --hrk-anthrazit: #241F1C;
+  --hrk-gold:            #C3A359;  /* nur Linien */
+  --hrk-gold-dark:       #A98A45;
+  --hrk-surface:         #FFFFFF;
+  --hrk-surface-muted: #F2EFEA;
+  --hrk-border: #E2DDD5;
   --hrk-border-strong: #CFC8BD;
   --hrk-text: #241F1C;
-  --hrk-text-muted:      #6B6357;  /* Hilfetext, Labels, Platzhalter */
-
-  /* --- Status-/Semantikfarben (Badges, Hinweise) --- */
-  --hrk-success: #2A7254;  --hrk-success-bg: #E5F1EB;
-  --hrk-warning: #946010;  --hrk-warning-bg: #FBF1DD;
+  --hrk-text-muted:      #6B6357;
+  --hrk-on-primary:     #FFFFFF;
   --hrk-danger:          #B23A48;  --hrk-danger-bg:  #F8E7E9;
-  --hrk-info:            #2F6F9F;  --hrk-info-bg:    #E6F0F7;
-  --hrk-neutral:         #6B6357;  --hrk-neutral-bg: #EFEAE2;
-
-  /* --- Typografie --- */
-  --hrk-font-head: "Archivo", "Inter", system-ui, sans-serif;        /* nur H1/H2 */
+  --hrk-font-head: "Archivo", "Inter", system-ui, sans-serif;
   --hrk-font-body: "Inter", "Source Sans 3", system-ui, sans-serif;
-  --hrk-fs-h1: 1.875rem; /* ~31px (Variante A: groesser) */
-  --hrk-fs-h2: 1.375rem;  /* ~22px */
-  --hrk-fs-h3: 1.125rem;  /* ~18px */
-  --hrk-fs-body: 1.0625rem; /* 17px — Mindestgroesse Fliesstext */
-  --hrk-fs-small: 0.9375rem; /* 15px */
+  --hrk-fs-h1: 1.875rem;
+  --hrk-fs-h2: 1.375rem;
+  --hrk-fs-body: 1.0625rem;
+  --hrk-fs-small: 0.9375rem;
   --hrk-lh-body: 1.55;
   --hrk-fw-regular: 400; --hrk-fw-medium: 500; --hrk-fw-semibold: 600;
-
-  /* --- Abstaende (4px-Raster) --- */
   --hrk-space-1: 4px;  --hrk-space-2: 8px;  --hrk-space-3: 12px;
   --hrk-space-4: 16px; --hrk-space-5: 24px; --hrk-space-6: 32px;
   --hrk-space-7: 48px;
-
-  /* --- Radien, Schatten, Fokus (weiche, warm getoente Schatten) --- */
-  --hrk-radius-sm: 6px; --hrk-radius-md: 6px; --hrk-radius-lg: 10px;
-  --hrk-radius-pill: 6px;
-  --hrk-shadow-card: 0 1px 2px rgba(40,35,30,.05);
-  --hrk-shadow-pop: 0 1px 2px rgba(40,35,30,.05);
-  --hrk-focus-ring: 0 0 0 2px var(--hrk-surface), 0 0 0 4px var(--hrk-bordeaux);
-
-  /* --- Tap-Flaechen (Handy zuerst) --- */
   --hrk-tap-min: 44px;
-  --hrk-page-max: 880px; /* lesbare Spaltenbreite */
-
-  /* --- Overlay (Modals, Sheets) --- */
-  --hrk-overlay: rgba(20,24,28,.55);
-
-  /* --- Icon-Groessen (Inline-SVG, stroke=currentColor) --- */
-  --hrk-icon-size-sm: 16px;
-  --hrk-icon-size-md: 20px;
-  --hrk-icon-size-lg: 28px;
-  /* Design-Umsetzung 23.09.2026 (Phase 1): Schiefer, Schriften, zwei Radien, ein Schatten */
+  --hrk-page-max: 880px;
   --hrk-schiefer: #33475B;
   --hrk-schiefer-dark: #243444;
   --hrk-schiefer-soft: #EBEEF1;
@@ -508,10 +491,13 @@ export default {
   --hrk-font-brand: "Gloock", Georgia, serif;
   --hrk-fs-xs: 0.8125rem;
   --hrk-ls-caps: .06em;
-  --hrk-radius-field: 6px;
-  --hrk-radius-card: 10px;
-  --hrk-shadow: 0 1px 2px rgba(40,35,30,.05);
-  --hrk-page-wide: 1200px;
+  /* Stil A «Editorial»: Linien, Warmgrau, Hauchfarben, Archivo-Labels */
+  --hrk-linie: #D6D0CA;
+  --hrk-warmgrau: #EFEBE7;
+  --hrk-gold-hauch: #FAF6EC;
+  --hrk-schiefer-hauch: #F2F5F8;
+  --hrk-blush-hauch: #FBF5F5;
+  --hrk-font-label: "Archivo", "Inter", system-ui, sans-serif;
 }
 
 /* ---------------- Basis ---------------- */
@@ -522,179 +508,97 @@ export default {
   font-size: var(--hrk-fs-body);
   line-height: var(--hrk-lh-body);
   color: var(--hrk-text);
-  background: var(--hrk-creme);
+  background: var(--hrk-surface);
   -webkit-font-smoothing: antialiased;
 }
-.hrk-page { width: 100%; max-width: var(--hrk-page-max); margin: 0 auto; padding: var(--hrk-space-6) var(--hrk-space-4); }
-.hrk-h1 { font-family: var(--hrk-font-head); font-size: var(--hrk-fs-h1); font-weight: var(--hrk-fw-semibold); line-height: 1.12; letter-spacing: -.02em; color: var(--hrk-text); margin: 0 0 var(--hrk-space-3); }
 .hrk-muted { color: var(--hrk-text-muted); }
-.hrk-small { font-size: var(--hrk-fs-small); }
-
-/* ---------------- Knoepfe ---------------- */
-.hrk-btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: var(--hrk-space-2);
-  min-height: var(--hrk-tap-min); padding: 0 var(--hrk-space-5);
-  font: inherit; font-weight: var(--hrk-fw-semibold);
-  border-radius: var(--hrk-radius-field); border: 1px solid transparent;
-  cursor: pointer; text-decoration: none; transition: background .15s, border-color .15s, transform .05s;
-}
-.hrk-btn:active { transform: translateY(1px); }
-.hrk-btn:focus-visible { outline: none; box-shadow: var(--hrk-focus-ring); }
-.hrk-btn--primary   { background: var(--hrk-bordeaux); color: var(--hrk-on-primary); }
-.hrk-btn--primary:hover { background: var(--hrk-bordeaux-dark); }
-.hrk-btn--secondary { background: var(--hrk-surface); color: var(--hrk-bordeaux); border-color: var(--hrk-border-strong); }
-.hrk-btn--secondary:hover { background: var(--hrk-bordeaux-soft); border-color: var(--hrk-bordeaux); }
-.hrk-btn--ghost     { background: transparent; color: var(--hrk-schiefer); }
-.hrk-btn--ghost:hover { background: var(--hrk-schiefer-soft); }
-.hrk-btn[disabled] { opacity: .5; cursor: not-allowed; }
-.hrk-btn--block { width: 100%; }
-
-/* ---------------- Karten ---------------- */
-.hrk-card { background: var(--hrk-surface); border: 1px solid var(--hrk-border);
-  border-radius: var(--hrk-radius-card); box-shadow: var(--hrk-shadow);
-  padding: var(--hrk-space-5); }
-
-/* ---------------- Icons (Inline-SVG, Katalog ICONS.md) ---------------- */
-.hrk-icon { width: var(--hrk-icon-size-md); height: var(--hrk-icon-size-md); flex: none; }
-.hrk-icon--sm { width: var(--hrk-icon-size-sm); height: var(--hrk-icon-size-sm); }
-.hrk-icon--lg { width: var(--hrk-icon-size-lg); height: var(--hrk-icon-size-lg); }
-
-/* ---------------- Handy zuerst (≤600px) ---------------- */
-@media (max-width: 600px) {
-  :root, .hrk-root { --hrk-fs-h1: 1.625rem; }
-  .hrk-page { padding: var(--hrk-space-4) var(--hrk-space-3); }
-}
+.hrk-icon { width: 20px; height: 20px; flex: none; }
+.hrk-icon--sm { width: 16px; height: 16px; }
+.hrk-root a:focus-visible, .hrk-root button:focus-visible { outline: 2px solid var(--hrk-schiefer); outline-offset: 3px; border-radius: 3px; box-shadow: none; }
 
 /* ============================================================
-   Abo-Auswahl — komponentenspezifische Klassen, ausschliesslich
-   auf Basis der --hrk-*-Tokens/hrk-card oben. Kein eigenes
-   Farbsystem, kein color-mix()-Glow.
+   Abo-Auswahl — Stil A «Editorial»: Linien statt Karte, Label-Spalte 220px + Inhalt,
+   Gloock-Titel, Archivo-Labels, Text-Knopf mit Gold-Unterstrich (eine Hauptaktion).
+   Farbrollen: Schiefer = Knoepfe/Struktur, Bordeaux = Link, Gold = nur Linie.
    ============================================================ */
 .abo-root { font-family: var(--hrk-font-body); color: var(--hrk-text); }
-.abo-page { max-width: 800px; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+.abo-main { display: block; width: 100%; }
+.abo-wrap { max-width: 1120px; margin: 0 auto; padding-left: var(--hrk-space-5); padding-right: var(--hrk-space-5); }
 
-/* Header */
-.abo-header { text-align: center; margin-bottom: 2.5rem; }
+.abo-top { background: var(--hrk-surface); padding: clamp(40px, 6vw, 64px) 0 clamp(28px, 4vw, 44px); }
+.abo-lab, .abo-nr { font-family: var(--hrk-font-label); font-size: var(--hrk-fs-xs); font-weight: var(--hrk-fw-semibold); letter-spacing: .14em;
+  text-transform: uppercase; color: var(--hrk-text-muted); }
+.abo-lab { margin: 0 0 var(--hrk-space-3); }
+.abo-h1 { font-family: var(--hrk-font-brand); font-weight: 400; letter-spacing: -.01em; color: var(--hrk-text);
+  font-size: clamp(40px, 7.4vw, 88px); line-height: 1.02; margin: 0; overflow-wrap: anywhere; }
+.abo-intro { margin: var(--hrk-space-4) 0 0; max-width: 40rem; }
 
-/* Toggle */
-.abo-toggle {
-  display: inline-flex;
-  background: var(--hrk-surface-muted);
-  border: 1.5px solid var(--hrk-border);
-  border-radius: var(--hrk-radius-field);
-  padding: 0.25rem;
-  margin-top: 1.25rem;
-  gap: 0.25rem;
-}
+/* Band: Warmgrau, Haarlinie oben, Raster Label-Spalte + Inhalt */
+.abo-band { background: var(--hrk-warmgrau); border-top: 1px solid var(--hrk-linie); }
+.abo-cards { display: block; padding-top: 28px; padding-bottom: 36px; }
+.abo-card { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: var(--hrk-space-6); cursor: default; }
+.abo-card__lab { min-width: 0; }
+.abo-nr { display: block; margin-bottom: 6px; }
+.abo-card__name { font-family: var(--hrk-font-brand); font-weight: 400; letter-spacing: -.01em; font-size: 26px; line-height: 1.15; margin: 0; color: var(--hrk-text); overflow-wrap: anywhere; }
+.abo-card__body { min-width: 0; border-top: 1px solid var(--hrk-text); padding-top: var(--hrk-space-4); max-width: 640px; }
+
+/* Toggle: Text-Reiter, aktiver Reiter Schiefer mit Haarlinie, kein Kasten */
+.abo-toggle { display: flex; flex-wrap: wrap; gap: var(--hrk-space-1) var(--hrk-space-5); margin: 0 0 var(--hrk-space-4); }
 .abo-toggle__btn {
-  background: none;
-  border: none;
-  border-radius: var(--hrk-radius-field);
-  min-height: var(--hrk-tap-min);
-  padding: 0.4rem 1.1rem;
-  font: inherit;
-  font-family: var(--hrk-font-head);
-  font-size: var(--hrk-fs-small);
-  cursor: pointer;
-  color: var(--hrk-text-muted);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: background 0.15s, color 0.15s;
+  background: none; border: 0; border-bottom: 1px solid transparent; border-radius: 0;
+  min-height: var(--hrk-tap-min); padding: 6px 0;
+  font: inherit; font-size: var(--hrk-fs-small); font-weight: var(--hrk-fw-medium);
+  color: var(--hrk-text-muted); cursor: pointer;
+  display: inline-flex; align-items: center; gap: var(--hrk-space-2);
 }
-.abo-toggle__btn--active {
-  background: var(--hrk-surface);
-  color: var(--hrk-bordeaux);
-  font-weight: var(--hrk-fw-semibold);
-  box-shadow: var(--hrk-shadow);
-}
-.abo-toggle__btn:focus-visible { outline: none; box-shadow: var(--hrk-focus-ring); }
-.abo-toggle__save {
-  font-size: var(--hrk-fs-small);
-  font-weight: var(--hrk-fw-semibold);
-  background: var(--hrk-bordeaux-soft);
-  color: var(--hrk-bordeaux);
-  padding: 0.1rem 0.45rem;
-  border-radius: var(--hrk-radius-field);
-}
+.abo-toggle__btn:hover { color: var(--hrk-text); }
+.abo-toggle__btn--active { color: var(--hrk-schiefer); font-weight: var(--hrk-fw-semibold); border-bottom-color: var(--hrk-schiefer); }
+.abo-toggle__save { font-family: var(--hrk-font-label); font-size: var(--hrk-fs-xs); font-weight: var(--hrk-fw-semibold); letter-spacing: .08em; text-transform: uppercase; color: var(--hrk-schiefer); }
 
-/* Karten-Grid */
-.abo-cards {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.25rem;
-  align-items: start;
-}
-@media (max-width: 600px) {
-  .abo-cards { grid-template-columns: 1fr; }
-}
-/* Ein-Plan-Modell: eine zentrierte, breitenbegrenzte Karte statt Zwei-Spalten-Grid */
-.abo-cards--single {
-  grid-template-columns: 1fr;
-  max-width: 380px;
-  margin: 0 auto;
-}
-
-/* Karte — auf .hrk-card aufgebaut, hier nur Layout + Auswahl-/Empfehlungs-Zustand */
-.abo-card {
-  cursor: pointer;
-  transition: border-color .15s, background .15s;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  border-width: 2px;
-}
-.abo-card:hover { border-color: var(--hrk-schiefer); }
-/* Ausgewaehlt: ruhiger Zustand, analog .hrk-radio--selected — Bordeaux-Rand + zarte Flaeche, kein Glow
-   (Variante C «Bordeaux leise» 03.10.2026: Auswahl-Zustaende sind Bordeaux, Flaechen zart) */
-.abo-card--selected { border-color: var(--hrk-bordeaux); background: var(--hrk-bordeaux-soft); }
-.abo-card--highlight { border-color: var(--hrk-schiefer); }
-
-.abo-card__badge {
-  font-family: var(--hrk-font-head);
-  font-size: var(--hrk-fs-small);
-  font-weight: var(--hrk-fw-semibold);
-  letter-spacing: var(--hrk-ls-caps);
-  text-transform: uppercase;
-  color: var(--hrk-schiefer);
-  background: var(--hrk-schiefer-soft);
-  padding: 0.2rem 0.6rem;
-  border-radius: var(--hrk-radius-field);
-  align-self: flex-start;
-}
-.abo-card__name { font-family: var(--hrk-font-head); font-size: var(--hrk-fs-h2); font-weight: var(--hrk-fw-semibold); color: var(--hrk-text); margin: 0; }
-.abo-card__price { display: flex; align-items: baseline; gap: 0.25rem; }
-/* Display-Zahl: 2rem bleibt bewusst (Ausnahme Phase 1, wie dashboard-start .dsb__stat-num) */
-.abo-card__amount { font-family: var(--hrk-font-mono); font-variant-numeric: tabular-nums; font-size: 2rem; font-weight: var(--hrk-fw-medium); color: var(--hrk-text); }
+.abo-card__price { display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--hrk-space-2); }
+.abo-card__amount { font-family: var(--hrk-font-brand); font-weight: 400; font-size: clamp(40px, 6vw, 56px); line-height: 1.05; letter-spacing: -.01em; color: var(--hrk-text); }
 .abo-card__period { font-size: var(--hrk-fs-small); color: var(--hrk-text-muted); }
-.abo-card__saving { font-size: var(--hrk-fs-small); color: var(--hrk-schiefer); font-weight: var(--hrk-fw-semibold); margin: -0.25rem 0 0; }
-.abo-card__tagline { font-size: var(--hrk-fs-body); color: var(--hrk-text-muted); margin: 0; }
+.abo-card__saving { font-size: var(--hrk-fs-small); color: var(--hrk-schiefer); font-weight: var(--hrk-fw-semibold); margin: var(--hrk-space-1) 0 0; }
+.abo-card__tagline { font-size: var(--hrk-fs-body); color: var(--hrk-text-muted); margin: var(--hrk-space-3) 0 var(--hrk-space-4); }
 
-.abo-card__features { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; font-size: var(--hrk-fs-body); }
-.abo-card__features li { display: flex; align-items: flex-start; gap: var(--hrk-space-2); }
+/* Leistungen: Zeilen mit Haarlinien */
+.abo-card__features { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--hrk-linie); font-size: var(--hrk-fs-body); }
+.abo-card__features li { display: flex; align-items: flex-start; gap: var(--hrk-space-3); padding: var(--hrk-space-3) 0; border-bottom: 1px solid var(--hrk-linie); }
 .abo-card__check { color: var(--hrk-schiefer); margin-top: 5px; }
-.abo-card__feat--dim { color: var(--hrk-text-muted); }
-.abo-card__cta { width: 100%; margin-top: 0.5rem; }
+
+/* Hauptaktion: Schiefer-Text mit 2px Gold-Unterstrich, kein Kasten */
+.abo-actions { margin-top: var(--hrk-space-5); }
+.abo-fw { display: inline-flex; align-items: center; gap: 10px; min-height: var(--hrk-tap-min); background: none; border: 0; border-bottom: 2px solid var(--hrk-gold);
+  border-radius: 0; padding: 8px 0; font: 600 18px/1.3 var(--hrk-font-body); color: var(--hrk-schiefer); cursor: pointer; }
+.abo-fw:hover { color: var(--hrk-schiefer-dark); }
+.abo-fw .hrk-icon { transition: transform .15s; }
+.abo-fw:hover .hrk-icon { transform: translateX(3px); }
+.abo-fw[disabled] { opacity: .5; cursor: not-allowed; }
 
 /* Extras-Hinweis */
-.abo-hint-extra { text-align: center; font-size: var(--hrk-fs-small); color: var(--hrk-text-muted); margin-top: 1.25rem; }
+.abo-hint-extra { font-size: var(--hrk-fs-small); color: var(--hrk-text-muted); margin: var(--hrk-space-4) 0 0; }
 
-/* Fehler */
-.abo-error { color: var(--hrk-danger); font-size: var(--hrk-fs-small); text-align: center; margin-top: 1rem; }
-.abo-error__link { color: var(--hrk-bordeaux); font-weight: var(--hrk-fw-semibold); text-decoration: underline; text-underline-offset: 2px; }
+/* Fehler: Blush-Hauch, Linie links in Danger */
+.abo-error { margin: var(--hrk-space-4) 0 0; padding: var(--hrk-space-3) var(--hrk-space-4); background: var(--hrk-blush-hauch); border-left: 2px solid var(--hrk-danger);
+  border-radius: 0 4px 4px 0; color: var(--hrk-danger); font-size: var(--hrk-fs-small); }
+.abo-error__link { margin-left: .25em; color: var(--hrk-bordeaux); font-weight: var(--hrk-fw-semibold); text-decoration: underline; text-underline-offset: 2px; }
 .abo-error__link:hover { color: var(--hrk-bordeaux-dark); }
-.abo-error__link:focus-visible { outline: none; box-shadow: var(--hrk-focus-ring); border-radius: var(--hrk-radius-field); }
 
-/* Später */
-.abo-later { text-align: center; margin-top: 2rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+/* Später: Zweitweg, grauer Text mit Haarlinie */
+.abo-later { padding-top: var(--hrk-space-5); padding-bottom: clamp(40px, 6vw, 64px); }
 .abo-later__btn {
-  background: none; border: none; cursor: pointer;
-  font: inherit;
-  color: var(--hrk-text-muted); font-size: var(--hrk-fs-small);
-  text-decoration: underline; padding: 0.25rem 0.5rem;
-  min-height: var(--hrk-tap-min);
+  display: inline-flex; align-items: center; min-height: var(--hrk-tap-min);
+  background: none; border: 0; border-bottom: 1px solid var(--hrk-linie); border-radius: 0; padding: 6px 0; cursor: pointer;
+  font: 500 var(--hrk-fs-small)/1.3 var(--hrk-font-body); color: var(--hrk-text-muted);
 }
-.abo-later__btn:hover { color: var(--hrk-text); }
-.abo-later__btn:focus-visible { outline: none; box-shadow: var(--hrk-focus-ring); border-radius: var(--hrk-radius-field); }
-.abo-later__btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.abo-later__btn:hover { color: var(--hrk-text); border-bottom-color: var(--hrk-text-muted); }
+.abo-later__btn:disabled { opacity: .5; cursor: not-allowed; }
+
+@media (max-width: 860px) {
+  .abo-card { grid-template-columns: minmax(0, 1fr); gap: var(--hrk-space-4); }
+  .abo-card__name { font-size: 24px; }
+}
+@media (max-width: 600px) {
+  .abo-wrap { padding-left: var(--hrk-space-4); padding-right: var(--hrk-space-4); }
+}
 </style>

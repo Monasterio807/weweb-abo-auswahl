@@ -322,19 +322,19 @@ describe('Timeout (fetchWithTimeout)', () => {
   });
 });
 
-describe('Design-System-Regression (.hrk-* Tokens/Klassen)', () => {
-  it('Grundgeruest nutzt .hrk-root/.hrk-page/.hrk-card, CTA ist .hrk-btn--primary', () => {
+describe('Design-System-Regression (Stil A «Editorial», Entscheid 13.10.2026)', () => {
+  it('Grundgeruest nutzt .hrk-root/.hrk-page, Hauptaktion ist ein Text-Knopf ohne Kasten', () => {
     const wrapper = mountComponent();
     expect(wrapper.find('.hrk-root').exists()).toBe(true);
     expect(wrapper.find('.hrk-page').exists()).toBe(true);
     // Fix-Runde 24.09.2026 (Entscheid 9, s6-B11): «Wähle dein Abo» statt «Wähle dein imploya-Abo».
     expect(wrapper.find('.hrk-h1').text()).toBe('Wähle dein Abo');
-    // Eine Plan-Karte baut auf .hrk-card auf
-    expect(wrapper.findAll('.hrk-card').length).toBe(1);
-    // Design-Regel: genau EIN .hrk-btn--primary pro Seite
-    expect(wrapper.findAll('.hrk-btn--primary').length).toBe(1);
-    expect(wrapper.findAll('.hrk-btn--secondary').length).toBe(0);
-    expect(wrapper.find('.abo-card__cta').classes()).toContain('hrk-btn');
+    // Stil A: Linien statt Karte, keine Bordeaux-Knopf-Flaeche (angepasst: vorher .hrk-card / .hrk-btn--primary)
+    expect(wrapper.findAll('.hrk-card').length).toBe(0);
+    expect(wrapper.findAll('.hrk-btn--primary').length).toBe(0);
+    // Design-Regel: genau EINE Hauptaktion pro Seite
+    expect(wrapper.findAll('.abo-fw').length).toBe(1);
+    expect(wrapper.find('.abo-card__cta').classes()).toContain('abo-fw');
   });
 });
 
