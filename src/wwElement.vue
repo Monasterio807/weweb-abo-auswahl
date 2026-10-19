@@ -39,7 +39,7 @@
                   :class="{ 'abo-toggle__btn--active': billing === 'year' }"
                   :aria-pressed="billing === 'year' ? 'true' : 'false'"
                   @click.stop="billing = 'year'"
-                >Jährlich <span class="abo-toggle__save">2 Monate gratis</span></button>
+                >Jährlich <span class="abo-toggle__save">1 Monat gratis</span></button>
               </div>
 
               <div class="abo-card__price">
@@ -103,7 +103,7 @@
  *   Quelle: subscription_limits + check_service_limit-RPC (monatlich, kein Wochenkontingent).
  * v4 (02.08.2026, Richards Entscheid): Ein-Plan-Modell — Plus eingestellt (plan_prices.active
  *   auf false gesetzt, keine Kunden betroffen, 0 aktive plus-Abos zum Zeitpunkt der Umstellung).
- *   Nur noch Basis CHF 29/Mt bzw. CHF 290/Jahr.
+ *   Nur noch Basis CHF 29/Mt bzw. CHF 319/Jahr (1 Monat gratis, Richard 18.10.2026).
  * v5 (14.09.2026, ECC-vue#1): fetchWithTimeout ergaenzt (Muster vertrag-erstellen/dashboard-start,
  *   20s) — Token-Refresh und beide stripe-checkout-Aufrufe (Erst- und 401-Retry) liefen bisher
  *   ohne Zeitlimit; der Button haette bei einer haengenden Verbindung ewig auf "Einen Moment ..."
@@ -210,12 +210,12 @@ export default {
     // ---- Fix-Runde 24.09.2026 (Vollaudit Kundensicht, F29) ----
     // Die Karte zeigt den Betrag der plan_prices-Zeile, deren stripe_price_id der Checkout
     // wirklich sendet (priceIds). Ist die Tabelle (noch) nicht geladen, bleibt der bisherige
-    // Anzeigewert stehen (29/290, gemessen 24.09.2026 identisch mit plan_prices), damit die
+    // Anzeigewert stehen (29/319, Richard 18.10.2026; vorher 29/290), damit die
     // Karte nie ohne Preis dasteht. Neue Zahlen (Bezugspreis) gibt es NUR aus der DB.
     zeileMonat() { return this.preise.find(p => p.active !== false && p.stripe_price_id === this.priceIds.basis_month) || null; },
     zeileJahr() { return this.preise.find(p => p.active !== false && p.stripe_price_id === this.priceIds.basis_year) || null; },
     preisMonatChf() { return this.zeileMonat ? this.chf(this.zeileMonat.amount_rappen) : '29'; },
-    preisJahrChf() { return this.zeileJahr ? this.chf(this.zeileJahr.amount_rappen) : '290'; },
+    preisJahrChf() { return this.zeileJahr ? this.chf(this.zeileJahr.amount_rappen) : '319'; },
     // Entscheid 8 (20.09.2026): verglichen wird mit dem Normalpreis (inaktive, teurere
     // Jahreszeile des Basis-Plans, live 39000), nicht mit 12 x Aktionspreis (348).
     normalJahrChf() {
@@ -226,7 +226,7 @@ export default {
       return n ? this.chf(n.amount_rappen) : '';
     },
     sparHinweis() {
-      return this.normalJahrChf ? `statt CHF ${this.normalJahrChf} im Jahr, 2 Monate gratis` : '2 Monate gratis';
+      return this.normalJahrChf ? `statt CHF ${this.normalJahrChf} im Jahr, 1 Monat gratis` : '1 Monat gratis';
     },
     // s6-B10 (Entscheid 7), gleicher Wortlaut wie /abo (abo-verwalten). «jederzeit kündbar»
     // ist eine Vertragsaussage und fällt weg; «ohne Kreditkarte» deckt stripe-checkout
