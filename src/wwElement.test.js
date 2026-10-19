@@ -22,7 +22,7 @@ const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 // Stripe Price-IDs exakt wie in wwElement.vue (data.priceIds)
 const PRICE_IDS = {
   basis_month: 'price_1TnxRXFLoauOOkHyLbCG9e4j',
-  basis_year: 'price_1TnxRXFLoauOOkHyGTdJU7TP',
+  basis_year: 'price_1USIfzFLoauOOkHy6yp9t1N0',
 };
 
 function mountComponent(contentOverrides = {}) {

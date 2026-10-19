@@ -153,7 +153,7 @@ export default {
       trialBerechtigt: null,
       priceIds: {
         basis_month: 'price_1TnxRXFLoauOOkHyLbCG9e4j',
-        basis_year:  'price_1TnxRXFLoauOOkHyGTdJU7TP',
+        basis_year:  'price_1USIfzFLoauOOkHy6yp9t1N0',
       },
     };
   },
