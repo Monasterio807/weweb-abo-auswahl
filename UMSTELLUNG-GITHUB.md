@@ -47,8 +47,8 @@ Kein Style-Override am alten Element, kein Workflow — nur diese fünf Werte.
 ## Schritt 4 — vergleichen
 
 - [ ] Überschrift «Wähle dein Imploya-Abo», **eine** Plan-Karte (nicht zwei)
-- [ ] Toggle Monatlich/Jährlich schaltet zwischen **CHF 29** und **CHF 290**
-- [ ] Bei Jährlich erscheint «statt CHF 348/Jahr — 2 Monate gratis»
+- [ ] Toggle Monatlich/Jährlich schaltet zwischen **CHF 29** und **CHF 319**
+- [ ] Bei Jährlich erscheint «statt CHF 429 im Jahr, 1 Monat gratis»
 - [ ] «Jetzt starten» führt in den Stripe-Checkout (Test-Modus, nicht abschliessen)
 - [ ] «Noch nicht — ich schau mich erst um» geht auf `/onboarding`
 

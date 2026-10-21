@@ -1,11 +1,11 @@
 {
   "metadata": {
     "name": "weweb-abo-auswahl",
-    "description": "Ein Plan imploya CHF 29/Mt (bzw. CHF 290 pro Jahr, 2 Monate gratis) mit Monats/Jahres-Toggle und Stripe-Checkout. 30-Tage-Trial fuer Neukunden automatisch. Plus-Plan seit 02.08.2026 eingestellt.",
+    "description": "Ein Plan imploya CHF 29/Mt (bzw. CHF 319 pro Jahr, 1 Monat gratis) mit Monats/Jahres-Toggle und Stripe-Checkout. 30-Tage-Trial fuer Neukunden automatisch. Plus-Plan seit 02.08.2026 eingestellt.",
     "keywords": ["abo", "plan", "stripe", "checkout", "imploya", "basis"],
     "features": [
-      "Billing Toggle: Monatlich / Jaehrlich (2 Monate gratis)",
-      "imploya CHF 29/Mt bzw. CHF 290/Jahr",
+      "Billing Toggle: Monatlich / Jaehrlich (1 Monat gratis)",
+      "imploya CHF 29/Mt bzw. CHF 319/Jahr",
       "30-Tage-Trial fuer Neukunden via stripe-checkout",
       "Netzwerk-Timeout (15s) beim Checkout, 401-Token-Refresh-Retry"
     ],
