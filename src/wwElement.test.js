@@ -378,7 +378,7 @@ describe('F29: Preise aus plan_prices (Entscheid 8)', () => {
     await flush();
     await wrapper.vm.$nextTick();
     expect(wrapper.find('.abo-card__amount').text()).toBe('CHF 31');
-    expect(wrapper.find('.abo-header .hrk-muted').text()).toBe('Beim ersten Abo ist der erste Monat gratis, ohne Kreditkarte. Danach zahlst du CHF 31 im Monat. Aktionspreis bis Ende 2027, danach CHF 39 im Monat.');
+    expect(wrapper.find('.abo-header .hrk-muted').text()).toBe('Beim ersten Abo ist der erste Monat gratis, ohne Kreditkarte. Danach zahlst du CHF 31 im Monat. Aktionspreis bis Ende 2027, ab 2028 CHF 39 im Monat.');
   });
 
   it('ohne Normalpreis-Zeile kein Bezugspreis (keine erfundene 429)', async () => {
@@ -496,14 +496,14 @@ describe('Block 2 G: Tastatur und Screenreader', () => {
 
 // ---------------------------------------------------------------------------
 // A3 W1 (KI-Kundentest 12.11.2026): der Preissatz steht auf /, /preise, /abo- und /abo wortgleich:
-// «Aktionspreis bis Ende 2027, danach CHF 39 im Monat.» Der Normalpreis kommt aus der inaktiven
+// «Aktionspreis bis Ende 2027, ab 2028 CHF 39 im Monat.» Der Normalpreis kommt aus der inaktiven
 // Monatszeile in plan_prices; fehlt sie, steht kein «danach»-Satz.
 // ---------------------------------------------------------------------------
 describe('A3 W1: Preissatz im Einleitungssatz', () => {
   const B64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64').replace(/=+$/, '');
   const JWT = `x.${B64({ sub: 'user-1' })}.y`;
   const URL_ZH = 'https://ztvqsxdudzdyqgeylujr.supabase.co';
-  const PREIS_SATZ = 'Aktionspreis bis Ende 2027, danach CHF 39 im Monat.';
+  const PREIS_SATZ = 'Aktionspreis bis Ende 2027, ab 2028 CHF 39 im Monat.';
   const mitNormal = [
     { plan: 'basis', interval: 'month', active: true, stripe_price_id: PRICE_IDS.basis_month, amount_rappen: 2900 },
     { plan: 'basis', interval: 'month', active: false, stripe_price_id: 'mn', amount_rappen: 3900 },

@@ -232,7 +232,7 @@ export default {
       const n = this.preise
         .filter(p => p.active === false && p.interval === 'month' && p.amount_rappen > this.zeileMonat.amount_rappen)
         .sort((a, b) => b.amount_rappen - a.amount_rappen)[0];
-      return n ? `Aktionspreis bis Ende 2027, danach CHF ${this.chf(n.amount_rappen)} im Monat.` : '';
+      return n ? `Aktionspreis bis Ende 2027, ab 2028 CHF ${this.chf(n.amount_rappen)} im Monat.` : '';
     },
     sparHinweis() {
       return this.normalJahrChf ? `statt CHF ${this.normalJahrChf} im Jahr, 1 Monat gratis` : '1 Monat gratis';
