@@ -378,7 +378,7 @@ describe('F29: Preise aus plan_prices (Entscheid 8)', () => {
     await flush();
     await wrapper.vm.$nextTick();
     expect(wrapper.find('.abo-card__amount').text()).toBe('CHF 31');
-    expect(wrapper.find('.abo-header .hrk-muted').text()).toBe('Beim ersten Abo ist der erste Monat gratis, ohne Kreditkarte. Danach zahlst du CHF 31 im Monat.');
+    expect(wrapper.find('.abo-header .hrk-muted').text()).toBe('Beim ersten Abo ist der erste Monat gratis, ohne Kreditkarte. Danach zahlst du CHF 31 im Monat. Aktionspreis bis Ende 2027, danach CHF 39 im Monat.');
   });
 
   it('ohne Normalpreis-Zeile kein Bezugspreis (keine erfundene 429)', async () => {
