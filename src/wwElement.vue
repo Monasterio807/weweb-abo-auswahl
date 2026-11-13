@@ -235,7 +235,7 @@ export default {
       return n ? `Aktionspreis bis Ende 2027, ab 2028 CHF ${this.chf(n.amount_rappen)} im Monat.` : '';
     },
     sparHinweis() {
-      return this.normalJahrChf ? `statt CHF ${this.normalJahrChf} im Jahr, 1 Monat gratis` : '1 Monat gratis';
+      return this.normalJahrChf ? `Aktionspreis bis Ende 2027, ab 2028 CHF ${this.normalJahrChf} im Jahr. 1 Monat gratis.` : '1 Monat gratis';
     },
     // s6-B10 (Entscheid 7), gleicher Wortlaut wie /abo (abo-verwalten). «jederzeit kündbar»
     // ist eine Vertragsaussage und fällt weg; «ohne Kreditkarte» deckt stripe-checkout

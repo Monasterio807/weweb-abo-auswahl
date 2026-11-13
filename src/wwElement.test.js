@@ -355,14 +355,14 @@ describe('F29: Preise aus plan_prices (Entscheid 8)', () => {
   });
   const URL_ZH = 'https://ztvqsxdudzdyqgeylujr.supabase.co';
 
-  it('Jahr: «statt CHF 429 im Jahr, 1 Monat gratis» aus der inaktiven Normalpreis-Zeile', async () => {
+  it('Jahr: «Aktionspreis bis Ende 2027, ab 2028 CHF 429 im Jahr. 1 Monat gratis.» aus der inaktiven Normalpreis-Zeile', async () => {
     const calls = [];
     vi.stubGlobal('fetch', stubPreise(PLAN_PRICES, calls));
     const wrapper = mountComponent({ supabaseUrl: URL_ZH });
     await flush();
     await wrapper.findAll('.abo-toggle__btn')[1].trigger('click');
     expect(wrapper.find('.abo-card__amount').text()).toBe('CHF 319');
-    expect(wrapper.find('.abo-card__saving').text()).toBe('statt CHF 429 im Jahr, 1 Monat gratis');
+    expect(wrapper.find('.abo-card__saving').text()).toBe('Aktionspreis bis Ende 2027, ab 2028 CHF 429 im Jahr. 1 Monat gratis.');
     // oeffentliche Tabelle: nur der Anon-Key geht mit, kein Nutzer-Token noetig
     const c = calls.find((x) => x.url.includes('/rest/v1/plan_prices'));
     expect(c.url).toContain('plan=eq.basis');
