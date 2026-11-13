@@ -225,6 +225,15 @@ export default {
         .sort((a, b) => b.amount_rappen - a.amount_rappen)[0];
       return n ? this.chf(n.amount_rappen) : '';
     },
+    // A3 (W1): der eine Preissatz, wortgleich auf /, /preise, /abo- und /abo. Der Normalpreis ist die
+    // inaktive, teurere Monatszeile; ohne sie kein Satz statt einer erfundenen Zahl.
+    preisSatzAktion() {
+      if (!this.zeileMonat) return '';
+      const n = this.preise
+        .filter(p => p.active === false && p.interval === 'month' && p.amount_rappen > this.zeileMonat.amount_rappen)
+        .sort((a, b) => b.amount_rappen - a.amount_rappen)[0];
+      return n ? `Aktionspreis bis Ende 2027, ab 2028 CHF ${this.chf(n.amount_rappen)} im Monat.` : '';
+    },
     sparHinweis() {
       return this.normalJahrChf ? `statt CHF ${this.normalJahrChf} im Jahr, 1 Monat gratis` : '1 Monat gratis';
     },
@@ -240,9 +249,10 @@ export default {
       const betrag = zeile
         ? (this.billing === 'year' ? `CHF ${this.preisJahrChf} im Jahr` : `CHF ${this.preisMonatChf} im Monat`)
         : '';
-      const danach = betrag ? ` Danach zahlst du ${betrag}.` : '';
+      const aktion = (this.billing !== 'year' && this.preisSatzAktion) ? ` ${this.preisSatzAktion}` : '';
+      const danach = betrag ? ` Danach zahlst du ${betrag}.${aktion}` : '';
       if (this.trialBerechtigt === true) return `Der erste Monat im Abo ist gratis, ohne Kreditkarte.${danach}`;
-      if (this.trialBerechtigt === false) return betrag ? `Das Abo kostet ${betrag}.` : '';
+      if (this.trialBerechtigt === false) return betrag ? `Das Abo kostet ${betrag}.${aktion}` : '';
       return `Beim ersten Abo ist der erste Monat gratis, ohne Kreditkarte.${danach}`;
     },
     // user_id (sub) aus dem JWT fuer den expliziten Filter (RLS-Admin-Zweig, wie abo-verwalten).

@@ -378,7 +378,7 @@ describe('F29: Preise aus plan_prices (Entscheid 8)', () => {
     await flush();
     await wrapper.vm.$nextTick();
     expect(wrapper.find('.abo-card__amount').text()).toBe('CHF 31');
-    expect(wrapper.find('.abo-header .hrk-muted').text()).toBe('Beim ersten Abo ist der erste Monat gratis, ohne Kreditkarte. Danach zahlst du CHF 31 im Monat.');
+    expect(wrapper.find('.abo-header .hrk-muted').text()).toBe('Beim ersten Abo ist der erste Monat gratis, ohne Kreditkarte. Danach zahlst du CHF 31 im Monat. Aktionspreis bis Ende 2027, ab 2028 CHF 39 im Monat.');
   });
 
   it('ohne Normalpreis-Zeile kein Bezugspreis (keine erfundene 429)', async () => {
@@ -491,5 +491,59 @@ describe('Block 2 G: Tastatur und Screenreader', () => {
     const cta = w.find('.abo-card .abo-card__cta');
     expect(cta.element.tagName).toBe('BUTTON');
     expect(cta.attributes('type')).toBe('button');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// A3 W1 (KI-Kundentest 12.11.2026): der Preissatz steht auf /, /preise, /abo- und /abo wortgleich:
+// «Aktionspreis bis Ende 2027, ab 2028 CHF 39 im Monat.» Der Normalpreis kommt aus der inaktiven
+// Monatszeile in plan_prices; fehlt sie, steht kein «danach»-Satz.
+// ---------------------------------------------------------------------------
+describe('A3 W1: Preissatz im Einleitungssatz', () => {
+  const B64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64').replace(/=+$/, '');
+  const JWT = `x.${B64({ sub: 'user-1' })}.y`;
+  const URL_ZH = 'https://ztvqsxdudzdyqgeylujr.supabase.co';
+  const PREIS_SATZ = 'Aktionspreis bis Ende 2027, ab 2028 CHF 39 im Monat.';
+  const mitNormal = [
+    { plan: 'basis', interval: 'month', active: true, stripe_price_id: PRICE_IDS.basis_month, amount_rappen: 2900 },
+    { plan: 'basis', interval: 'month', active: false, stripe_price_id: 'mn', amount_rappen: 3900 },
+    { plan: 'basis', interval: 'year', active: true, stripe_price_id: PRICE_IDS.basis_year, amount_rappen: 31900 },
+    { plan: 'basis', interval: 'year', active: false, stripe_price_id: 'yn', amount_rappen: 42900 },
+  ];
+  const route = (preise, subs = []) => vi.fn(async (url) => {
+    const u = String(url);
+    if (u.includes('/rest/v1/subscriptions?')) return { ok: true, status: 200, json: async () => subs };
+    if (u.includes('/rest/v1/plan_prices')) return { ok: true, status: 200, json: async () => preise };
+    return { ok: true, status: 200, json: async () => [] };
+  });
+  const einl = (w) => w.find('.abo-header .hrk-muted').text();
+
+  it('Monat, Neukunde: Gratismonat, CHF 29 und der Preissatz', async () => {
+    vi.stubGlobal('fetch', route(mitNormal));
+    const w = mountComponent({ authToken: JWT, supabaseUrl: URL_ZH });
+    await flush(); await w.vm.$nextTick();
+    expect(einl(w)).toBe('Der erste Monat im Abo ist gratis, ohne Kreditkarte. Danach zahlst du CHF 29 im Monat. ' + PREIS_SATZ);
+  });
+
+  it('Monat, Rückkehrer: «Das Abo kostet CHF 29 im Monat.» und der Preissatz', async () => {
+    vi.stubGlobal('fetch', route(mitNormal, [{ id: 's-1' }]));
+    const w = mountComponent({ authToken: JWT, supabaseUrl: URL_ZH });
+    await flush(); await w.vm.$nextTick();
+    expect(einl(w)).toBe('Das Abo kostet CHF 29 im Monat. ' + PREIS_SATZ);
+  });
+
+  it('Jahr: kein Monats-Preissatz im Jahres-Satz', async () => {
+    vi.stubGlobal('fetch', route(mitNormal));
+    const w = mountComponent({ authToken: JWT, supabaseUrl: URL_ZH });
+    await flush();
+    await w.findAll('.abo-toggle__btn')[1].trigger('click');
+    expect(einl(w)).toBe('Der erste Monat im Abo ist gratis, ohne Kreditkarte. Danach zahlst du CHF 319 im Jahr.');
+  });
+
+  it('ohne Normalpreis-Zeile kein «danach»-Satz', async () => {
+    vi.stubGlobal('fetch', route(mitNormal.filter((p) => p.active)));
+    const w = mountComponent({ authToken: JWT, supabaseUrl: URL_ZH });
+    await flush(); await w.vm.$nextTick();
+    expect(einl(w)).toBe('Der erste Monat im Abo ist gratis, ohne Kreditkarte. Danach zahlst du CHF 29 im Monat.');
   });
 });
