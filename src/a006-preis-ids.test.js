@@ -105,3 +105,16 @@ describe('A-006: Preis-ID kommt aus der aktiven plan_prices-Zeile', () => {
     expect(w.text()).toContain('Das Abo lässt sich gerade nicht bestellen.');
   });
 });
+
+describe('A-006: Doppelklick während plan_prices lädt', () => {
+  it('zwei schnelle Klicks ergeben genau einen Aufruf von stripe-checkout', async () => {
+    const calls = [];
+    vi.stubGlobal('fetch', route(ZEILEN, calls));
+    const w = mountIt();
+    const cta = w.find('.abo-card__cta');
+    cta.trigger('click');
+    cta.trigger('click');
+    await flush(); await flush();
+    expect(checkoutCalls(calls).length).toBe(1);
+  });
+});

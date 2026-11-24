@@ -420,6 +420,9 @@ export default {
       this.errorLink = false;
       if (!this.authToken) { this.errorMsg = 'Du bist nicht eingeloggt. Bitte melde dich an.'; return; }
       // A-006: Klickt jemand, bevor plan_prices angekommen ist, erst fertig laden lassen.
+      // busy schon vor dem Warten setzen, damit ein zweiter Klick keinen zweiten Aufruf startet.
+      if (this.busy) return;
+      this.busy = true;
       if (this._preiseProm) { try { await this._preiseProm; } catch (_) { /* ladePreise faengt selbst */ } }
       const priceId = this.billing === 'year' ? this.priceIds.basis_year : this.priceIds.basis_month;
       // Keine aktive Zeile fuer das Intervall: kein Kauf, keine geratene oder veraltete ID.
@@ -427,6 +430,7 @@ export default {
       if (!priceId) {
         this.errorMsg = 'Das Abo lässt sich gerade nicht bestellen. Versuche es später nochmals.';
         this.emitEvent('error', { reason: 'kein-preis', billing: this.billing });
+        this.busy = false;
         return;
       }
 
