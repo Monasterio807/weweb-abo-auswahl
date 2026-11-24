@@ -39,15 +39,15 @@
                   :class="{ 'abo-toggle__btn--active': billing === 'year' }"
                   :aria-pressed="billing === 'year' ? 'true' : 'false'"
                   @click.stop="billing = 'year'"
-                >Jährlich <span class="abo-toggle__save">1 Monat gratis</span></button>
+                >Jährlich <span v-if="jahresMonate" class="abo-toggle__save">{{ jahresMonate }} zahlen, 12 bekommen</span></button>
               </div>
 
-              <div class="abo-card__price">
+              <div v-if="billing === 'year' ? preisJahrChf : preisMonatChf" class="abo-card__price">
                 <span class="abo-card__amount">CHF {{ billing === 'year' ? preisJahrChf : preisMonatChf }}</span>
                 <span class="abo-card__period">{{ billing === 'year' ? '/Jahr' : '/Monat' }}</span>
               </div>
-              <!-- Fix-Runde 24.09.2026 (s6-B02, Entscheid 8): Bezugspreis = inaktive Normalpreis-Zeile aus plan_prices, nie 12 x Aktionspreis. -->
-              <p v-if="billing === 'year'" class="abo-card__saving">{{ sparHinweis }}</p>
+              <!-- A-040 (24.11.2026): kein Vergleichspreis mehr; die Monate werden aus plan_prices gerechnet. -->
+              <p v-if="billing === 'year' && sparHinweis" class="abo-card__saving">{{ sparHinweis }}</p>
               <p class="abo-card__tagline">Alles, was dein Betrieb für die HR-Basics braucht.</p>
               <ul class="abo-card__features">
                 <li><svg class="hrk-icon hrk-icon--sm abo-card__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="5,12.5 10,17.5 19,7"/></svg>30 Fragen an Emily pro Monat</li>
@@ -70,12 +70,8 @@
                 >{{ busy && selected === 'basis' ? 'Einen Moment …' : 'Jetzt starten' }} <svg class="hrk-icon hrk-icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="4" y1="12" x2="19" y2="12"/><polyline points="13,6 19,12 13,18"/></svg></button>
               </div>
 
-              <!-- Hinweis Einzelpreise -->
-              <!-- W32 (Neukunden-Audit 24.08.2026, von Richard bestaetigt 25.08.): diese Zeile
-                   steht direkt unter der Abo-Karte (30 Emily-Fragen/Monat inklusive) — hier
-                   gilt der Abo-Preis fuer weitere Fragen, CHF 4, nicht der volle Preis CHF 9
-                   ohne Abo. "Zusätzliche Dokumente CHF 3/Stück" war schon korrekt (Abo-Preis). -->
-              <p class="abo-hint-extra">Zusätzliche Dokumente CHF 3/Stück · Extra Emily-Fragen CHF 4/10 Fragen</p>
+              <!-- Hinweis Einzelpreise: Abo-Preise aus credit_service_prices (A-040, G9-09), ohne Daten keine Zeile. -->
+              <p v-if="extraHinweis" class="abo-hint-extra">{{ extraHinweis }}</p>
             </div>
           </div>
 
@@ -112,6 +108,10 @@
  *   finally (busy = false) wieder freigegeben.
  * v6 (14.10.2026, Design-Entscheid 13.10.): nur Optik auf Stil A «Editorial» umgestellt (Linien statt Karte,
  *   Gloock-Titel, Text-Knopf mit Gold-Unterstrich). Logik, Preise, Texte unveraendert.
+ * v7 (24.11.2026, A-040, Entscheid E65): ein Monatspreis, kein Aktionspreis, kein «ab 2028». Jede
+ *   Preiszahl kommt aus der Datenbank (plan_prices oeffentlich, credit_service_prices nur angemeldet).
+ *   Ohne Daten steht kein Betrag da (kein fester Ersatzwert mehr). Jahr: «11 zahlen, 12 bekommen»
+ *   statt «1 Monat gratis» (Ward-Vermerk A-040). Die Preis-IDs im Code ersetzt A-006.
  */
 function hrkEnsureBrandFont() {
   try {
@@ -147,6 +147,8 @@ export default {
       // Fix-Runde 24.09.2026 (s6-B02): plan_prices-Zeilen des Basis-Plans (aktive und
       // inaktive Normalpreise). Leer, solange nichts geladen ist.
       preise: [],
+      // A-040: { service: CHF } aus credit_service_prices (aktiv). Leer = nicht geladen.
+      creditPreise: {},
       // Nachbesserung 24.09.2026 (Prüfung W1): wie /abo (abo-verwalten). true = noch keine
       // subscriptions-Zeile, also Gratismonat laut stripe-checkout «Trial prüfen»; false = hatte
       // schon ein Abo; null = unbekannt (nicht angemeldet, keine user_id oder Lesefehler).
@@ -214,28 +216,27 @@ export default {
     // Karte nie ohne Preis dasteht. Neue Zahlen (Bezugspreis) gibt es NUR aus der DB.
     zeileMonat() { return this.preise.find(p => p.active !== false && p.stripe_price_id === this.priceIds.basis_month) || null; },
     zeileJahr() { return this.preise.find(p => p.active !== false && p.stripe_price_id === this.priceIds.basis_year) || null; },
-    preisMonatChf() { return this.zeileMonat ? this.chf(this.zeileMonat.amount_rappen) : '29'; },
-    preisJahrChf() { return this.zeileJahr ? this.chf(this.zeileJahr.amount_rappen) : '319'; },
-    // Entscheid 8 (20.09.2026): verglichen wird mit dem Normalpreis (inaktive, teurere
-    // Jahreszeile des Basis-Plans, live 39000), nicht mit 12 x Aktionspreis (348).
-    normalJahrChf() {
-      if (!this.zeileJahr) return '';
-      const n = this.preise
-        .filter(p => p.active === false && p.interval === 'year' && p.amount_rappen > this.zeileJahr.amount_rappen)
-        .sort((a, b) => b.amount_rappen - a.amount_rappen)[0];
-      return n ? this.chf(n.amount_rappen) : '';
-    },
-    // A3 (W1): der eine Preissatz, wortgleich auf /, /preise, /abo- und /abo. Der Normalpreis ist die
-    // inaktive, teurere Monatszeile; ohne sie kein Satz statt einer erfundenen Zahl.
-    preisSatzAktion() {
-      if (!this.zeileMonat) return '';
-      const n = this.preise
-        .filter(p => p.active === false && p.interval === 'month' && p.amount_rappen > this.zeileMonat.amount_rappen)
-        .sort((a, b) => b.amount_rappen - a.amount_rappen)[0];
-      return n ? `Aktionspreis bis Ende 2027, ab 2028 CHF ${this.chf(n.amount_rappen)} im Monat.` : '';
+    // A-040: kein fester Ersatzwert mehr. Ohne geladene Zeile ist der Betrag leer, die Karte
+    // zeigt dann keinen Preis (statt einer veralteten Zahl).
+    preisMonatChf() { return this.zeileMonat ? this.chf(this.zeileMonat.amount_rappen) : ''; },
+    preisJahrChf() { return this.zeileJahr ? this.chf(this.zeileJahr.amount_rappen) : ''; },
+    // A-040 (Ward-Vermerk): wie viele Monate das Jahresabo kostet, gerechnet aus den zwei aktiven
+    // Zeilen (462 / 42 = 11). Geht die Rechnung nicht glatt auf, steht nichts da.
+    jahresMonate() {
+      if (!this.zeileMonat || !this.zeileJahr) return 0;
+      const m = Number(this.zeileMonat.amount_rappen); const j = Number(this.zeileJahr.amount_rappen);
+      if (!(m > 0) || j % m !== 0) return 0;
+      const n = j / m;
+      return (n > 0 && n < 12) ? n : 0;
     },
     sparHinweis() {
-      return this.normalJahrChf ? `statt CHF ${this.normalJahrChf} im Jahr, 1 Monat gratis` : '1 Monat gratis';
+      return this.jahresMonate ? `Du zahlst ${this.jahresMonate} Monate und bekommst 12.` : '';
+    },
+    // A-040 (G9-09): Abo-Preise fuer Extras aus credit_service_prices. Nur wenn beide Werte da sind.
+    extraHinweis() {
+      const d = this.creditPreise.dokument_mit_abo; const e = this.creditPreise.emily_10_fragen_mit_abo;
+      if (!(d > 0) || !(e > 0)) return '';
+      return `Zusätzliche Dokumente CHF ${d}/Stück · Extra Emily-Fragen CHF ${e}/10 Fragen`;
     },
     // s6-B10 (Entscheid 7), gleicher Wortlaut wie /abo (abo-verwalten). «jederzeit kündbar»
     // ist eine Vertragsaussage und fällt weg; «ohne Kreditkarte» deckt stripe-checkout
@@ -249,10 +250,9 @@ export default {
       const betrag = zeile
         ? (this.billing === 'year' ? `CHF ${this.preisJahrChf} im Jahr` : `CHF ${this.preisMonatChf} im Monat`)
         : '';
-      const aktion = (this.billing !== 'year' && this.preisSatzAktion) ? ` ${this.preisSatzAktion}` : '';
-      const danach = betrag ? ` Danach zahlst du ${betrag}.${aktion}` : '';
+      const danach = betrag ? ` Danach zahlst du ${betrag}.` : '';
       if (this.trialBerechtigt === true) return `Der erste Monat im Abo ist gratis, ohne Kreditkarte.${danach}`;
-      if (this.trialBerechtigt === false) return betrag ? `Das Abo kostet ${betrag}.${aktion}` : '';
+      if (this.trialBerechtigt === false) return betrag ? `Das Abo kostet ${betrag}.` : '';
       return `Beim ersten Abo ist der erste Monat gratis, ohne Kreditkarte.${danach}`;
     },
     // user_id (sub) aus dem JWT fuer den expliziten Filter (RLS-Admin-Zweig, wie abo-verwalten).
@@ -268,9 +268,9 @@ export default {
   watch: {
     'content.supabaseUrl'() { this.ladePreise(); this.ladeTrial(); },
     'content.apiKey'() { this.ladePreise(); this.ladeTrial(); },
-    'content.authToken'() { this.ladeTrial(); },
+    'content.authToken'() { this.ladeTrial(); this.ladeCreditPreise(); },
   },
-  mounted() { hrkEnsureBrandFont(); this.ladePreise(); this.ladeTrial(); },
+  mounted() { hrkEnsureBrandFont(); this.ladePreise(); this.ladeTrial(); this.ladeCreditPreise(); },
   methods: {
     // Altwerte, die auf den Instanzen gebunden sind, beim Rendern auf das heutige
     // Ziel umschreiben. Wortlaut und Begruendung wie in coded-component-header-pro;
@@ -334,6 +334,28 @@ export default {
           : [];
       } catch (e) {
         try { console.warn('[abo-auswahl] plan_prices nicht geladen'); } catch (_) { /* ignore */ }
+      }
+    },
+    // A-040 (G9-09): credit_service_prices ist nur fuer angemeldete lesbar (Policy credit_price_select,
+    // authenticated). Ohne Token kein Aufruf, die Zeile faellt weg. Fehler blockieren nichts.
+    async ladeCreditPreise() {
+      if (!this.baseUrl || !this.apiKey || !this.authToken) { this.creditPreise = {}; return; }
+      try {
+        const res = await this.fetchWithTimeout(
+          `${this.baseUrl}/rest/v1/credit_service_prices?select=service,amount_credits&aktiv=eq.true&service=in.(dokument_mit_abo,emily_10_fragen_mit_abo)`,
+          { headers: this.authHeaders },
+          10000,
+        );
+        if (!res || !res.ok) { this.creditPreise = {}; return; }
+        const rows = await res.json().catch(() => null);
+        const map = {};
+        (Array.isArray(rows) ? rows : []).forEach((r) => {
+          const n = Number(r && r.amount_credits);
+          if (r && r.service && n > 0) map[r.service] = n;
+        });
+        this.creditPreise = map;
+      } catch (e) {
+        this.creditPreise = {};
       }
     },
     selectPlan(plan) { this.selected = plan; },

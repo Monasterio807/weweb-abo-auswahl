@@ -46,16 +46,16 @@ afterEach(() => {
 describe('Ein-Plan-Modell: genau eine Karte mit Namen, Preis und Features', () => {
   // Fix-Runde 24.09.2026: Planname «Basis» statt «imploya» (Entscheid 9, s6-B11), Leistungszeilen
   // ohne Gedankenstrich und im Wortlaut von /abo (s1-B15). Ohne supabaseUrl wird plan_prices
-  // nicht geladen: die Karte zeigt ihren Anzeigewert 29 (siehe preisMonatChf).
-  it('rendert genau eine Karte: Basis (CHF 29/Monat)', () => {
+  // nicht geladen. A-040 (24.11.2026): dann steht KEIN Betrag da (kein fester Ersatzwert 29 mehr).
+  it('rendert genau eine Karte: Basis, ohne geladene Preise ohne Betrag', () => {
     const wrapper = mountComponent();
     const cards = wrapper.findAll('.abo-card');
     expect(cards.length).toBe(1);
 
     const basis = cards[0];
     expect(basis.find('.abo-card__name').text()).toBe('Basis');
-    expect(basis.find('.abo-card__amount').text()).toBe('CHF 29');
-    expect(basis.find('.abo-card__period').text()).toBe('/Monat');
+    expect(basis.find('.abo-card__amount').exists()).toBe(false);
+    expect(basis.text()).not.toMatch(/CHF\s*\d/);
 
     expect(basis.text()).toContain('30 Fragen an Emily pro Monat');
     expect(basis.text()).toContain('15 Dokumente pro Monat');
@@ -64,7 +64,8 @@ describe('Ein-Plan-Modell: genau eine Karte mit Namen, Preis und Features', () =
     expect(basis.findAll('.abo-card__feat--dim').length).toBe(0);
   });
 
-  it('Jahres-Toggle: Preis wechselt auf CHF 319 pro Jahr inkl. Sparhinweis', async () => {
+  // A-040: ohne geladene Preise kein Betrag und kein Monate-Satz (Werte nur aus plan_prices).
+  it('Jahres-Toggle ohne geladene Preise: kein Betrag, kein Sparhinweis', async () => {
     const wrapper = mountComponent();
     // Monatlich ist der Default, kein Sparhinweis sichtbar
     expect(wrapper.vm.billing).toBe('month');
@@ -74,16 +75,9 @@ describe('Ein-Plan-Modell: genau eine Karte mit Namen, Preis und Features', () =
     await wrapper.findAll('.abo-toggle__btn')[1].trigger('click');
     expect(wrapper.vm.billing).toBe('year');
 
-    const amounts = wrapper.findAll('.abo-card__amount').map((n) => n.text());
-    expect(amounts).toEqual(['CHF 319']);
-    const periods = wrapper.findAll('.abo-card__period').map((n) => n.text());
-    expect(periods).toEqual(['/Jahr']);
-    // Fix-Runde 24.09.2026 (s6-B02, Entscheid 8): frueher stand hier fest «statt CHF 348/Jahr»
-    // (12 x Aktionspreis, eine Zahl, die niemand zahlt). Der Bezugspreis kommt jetzt nur noch
-    // aus plan_prices (Test unten). Ohne geladene Preise bleibt allein «1 Monat gratis».
-    const savings = wrapper.findAll('.abo-card__saving').map((n) => n.text());
-    expect(savings[0]).toBe('1 Monat gratis');
-    expect(savings[0]).not.toContain('348');
+    expect(wrapper.findAll('.abo-card__amount').length).toBe(0);
+    expect(wrapper.findAll('.abo-card__saving').length).toBe(0);
+    expect(wrapper.text()).not.toContain('348');
   });
 });
 
@@ -355,14 +349,16 @@ describe('F29: Preise aus plan_prices (Entscheid 8)', () => {
   });
   const URL_ZH = 'https://ztvqsxdudzdyqgeylujr.supabase.co';
 
-  it('Jahr: «statt CHF 429 im Jahr, 1 Monat gratis» aus der inaktiven Normalpreis-Zeile', async () => {
+  // A-040: eine teurere inaktive Zeile erzeugt keinen Vergleichspreis mehr (Ward: «statt CHF» rot).
+  it('Jahr: Monate-Satz aus den aktiven Zeilen, kein «statt CHF» trotz teurerer inaktiver Zeile', async () => {
     const calls = [];
     vi.stubGlobal('fetch', stubPreise(PLAN_PRICES, calls));
     const wrapper = mountComponent({ supabaseUrl: URL_ZH });
     await flush();
     await wrapper.findAll('.abo-toggle__btn')[1].trigger('click');
     expect(wrapper.find('.abo-card__amount').text()).toBe('CHF 319');
-    expect(wrapper.find('.abo-card__saving').text()).toBe('statt CHF 429 im Jahr, 1 Monat gratis');
+    expect(wrapper.find('.abo-card__saving').text()).toBe('Du zahlst 11 Monate und bekommst 12.');
+    expect(wrapper.text()).not.toContain('statt CHF');
     // oeffentliche Tabelle: nur der Anon-Key geht mit, kein Nutzer-Token noetig
     const c = calls.find((x) => x.url.includes('/rest/v1/plan_prices'));
     expect(c.url).toContain('plan=eq.basis');
@@ -378,23 +374,23 @@ describe('F29: Preise aus plan_prices (Entscheid 8)', () => {
     await flush();
     await wrapper.vm.$nextTick();
     expect(wrapper.find('.abo-card__amount').text()).toBe('CHF 31');
-    expect(wrapper.find('.abo-header .hrk-muted').text()).toBe('Beim ersten Abo ist der erste Monat gratis, ohne Kreditkarte. Danach zahlst du CHF 31 im Monat. Aktionspreis bis Ende 2027, ab 2028 CHF 39 im Monat.');
+    expect(wrapper.find('.abo-header .hrk-muted').text()).toBe('Beim ersten Abo ist der erste Monat gratis, ohne Kreditkarte. Danach zahlst du CHF 31 im Monat.');
   });
 
-  it('ohne Normalpreis-Zeile kein Bezugspreis (keine erfundene 429)', async () => {
+  it('nur aktive Zeilen: Monate-Satz gerechnet (31900 / 2900 = 11), kein Bezugspreis', async () => {
     vi.stubGlobal('fetch', stubPreise(PLAN_PRICES.filter((r) => r.active)));
     const wrapper = mountComponent({ supabaseUrl: URL_ZH });
     await flush();
     await wrapper.findAll('.abo-toggle__btn')[1].trigger('click');
-    expect(wrapper.find('.abo-card__saving').text()).toBe('1 Monat gratis');
+    expect(wrapper.find('.abo-card__saving').text()).toBe('Du zahlst 11 Monate und bekommst 12.');
   });
 
-  it('Lesefehler: Karte behaelt ihren Anzeigewert, keine Fehlermeldung fuer den Kunden', async () => {
+  it('Lesefehler: kein Betrag (A-040), keine Fehlermeldung fuer den Kunden', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => ({ ok: false, status: 500, json: async () => ({}) })));
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const wrapper = mountComponent({ supabaseUrl: URL_ZH });
     await flush();
-    expect(wrapper.find('.abo-card__amount').text()).toBe('CHF 29');
+    expect(wrapper.find('.abo-card__amount').exists()).toBe(false);
     expect(wrapper.vm.errorMsg).toBe('');
   });
 
@@ -518,18 +514,21 @@ describe('A3 W1: Preissatz im Einleitungssatz', () => {
   });
   const einl = (w) => w.find('.abo-header .hrk-muted').text();
 
-  it('Monat, Neukunde: Gratismonat, CHF 29 und der Preissatz', async () => {
+  // A-040 (E65): der Preissatz «Aktionspreis bis Ende 2027, ab 2028 …» ist abgeschafft, auch wenn
+  // plan_prices eine teurere inaktive Zeile fuehrt.
+  it('Monat, Neukunde: Gratismonat und CHF 29, kein Aktionssatz', async () => {
     vi.stubGlobal('fetch', route(mitNormal));
     const w = mountComponent({ authToken: JWT, supabaseUrl: URL_ZH });
     await flush(); await w.vm.$nextTick();
-    expect(einl(w)).toBe('Der erste Monat im Abo ist gratis, ohne Kreditkarte. Danach zahlst du CHF 29 im Monat. ' + PREIS_SATZ);
+    expect(einl(w)).toBe('Der erste Monat im Abo ist gratis, ohne Kreditkarte. Danach zahlst du CHF 29 im Monat.');
+    expect(w.text()).not.toContain(PREIS_SATZ);
   });
 
-  it('Monat, Rückkehrer: «Das Abo kostet CHF 29 im Monat.» und der Preissatz', async () => {
+  it('Monat, Rückkehrer: «Das Abo kostet CHF 29 im Monat.», kein Aktionssatz', async () => {
     vi.stubGlobal('fetch', route(mitNormal, [{ id: 's-1' }]));
     const w = mountComponent({ authToken: JWT, supabaseUrl: URL_ZH });
     await flush(); await w.vm.$nextTick();
-    expect(einl(w)).toBe('Das Abo kostet CHF 29 im Monat. ' + PREIS_SATZ);
+    expect(einl(w)).toBe('Das Abo kostet CHF 29 im Monat.');
   });
 
   it('Jahr: kein Monats-Preissatz im Jahres-Satz', async () => {
