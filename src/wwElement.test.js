@@ -25,6 +25,21 @@ const PRICE_IDS = {
   basis_year: 'price_1USIfzFLoauOOkHy6yp9t1N0',
 };
 
+// A-006 (24.11.2026): Der Checkout nimmt die Preis-ID aus der aktiven plan_prices-Zeile.
+// Die Checkout-Tests brauchen darum eine Antwort auf plan_prices; alles andere geht an den Mock.
+function mitPreisen(inner) {
+  return vi.fn((url, opt) => (String(url).includes('/rest/v1/plan_prices')
+    ? Promise.resolve({
+      ok: true,
+      status: 200,
+      json: async () => [
+        { plan: 'basis', interval: 'month', active: true, stripe_price_id: PRICE_IDS.basis_month, amount_rappen: 4200 },
+        { plan: 'basis', interval: 'year', active: true, stripe_price_id: PRICE_IDS.basis_year, amount_rappen: 46200 },
+      ],
+    })
+    : inner(url, opt)));
+}
+
 function mountComponent(contentOverrides = {}) {
   return mount(wwElement, {
     props: {
@@ -99,7 +114,7 @@ describe('Stripe-Checkout', () => {
       status: 200,
       json: async () => ({ url: 'https://checkout.stripe.com/test-session' }),
     }));
-    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('fetch', mitPreisen(fetchMock));
 
     const wrapper = mountComponent({ authToken: 'test-jwt', supabaseUrl: 'https://ztvqsxdudzdyqgeylujr.supabase.co' });
     await wrapper.findAll('.abo-toggle__btn')[1].trigger('click'); // Jährlich
@@ -134,9 +149,9 @@ describe('Stripe-Checkout', () => {
       status: 200,
       json: async () => ({ url: 'https://checkout.stripe.com/test-session' }),
     }));
-    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('fetch', mitPreisen(fetchMock));
 
-    const wrapper = mountComponent({ authToken: 'test-jwt' });
+    const wrapper = mountComponent({ authToken: 'test-jwt', supabaseUrl: 'https://ztvqsxdudzdyqgeylujr.supabase.co' });
     await wrapper.find('.abo-card__cta').trigger('click');
     await flush();
 
@@ -148,7 +163,7 @@ describe('Stripe-Checkout', () => {
 
   it('ohne Login: kein Backend-Aufruf, freundliche Fehlermeldung', async () => {
     const fetchMock = vi.fn();
-    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('fetch', mitPreisen(fetchMock));
 
     const wrapper = mountComponent({ authToken: '' });
     await wrapper.find('.abo-card__cta').trigger('click');
@@ -166,9 +181,9 @@ describe('Stripe-Checkout', () => {
       status: 500,
       json: async () => ({ error: 'Preis nicht gefunden.' }),
     }));
-    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('fetch', mitPreisen(fetchMock));
 
-    const wrapper = mountComponent({ authToken: 'test-jwt' });
+    const wrapper = mountComponent({ authToken: 'test-jwt', supabaseUrl: 'https://ztvqsxdudzdyqgeylujr.supabase.co' });
     await wrapper.find('.abo-card__cta').trigger('click');
     await flush();
 
@@ -191,9 +206,9 @@ describe('Stripe-Checkout', () => {
       status: 409,
       json: async () => ({ error: 'Du hast bereits ein aktives Abo. Einen Plan-Wechsel machst du im Abo-Portal, nicht über einen neuen Checkout.', code: 'ALREADY_SUBSCRIBED' }),
     }));
-    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('fetch', mitPreisen(fetchMock));
 
-    const wrapper = mountComponent({ authToken: 'test-jwt' });
+    const wrapper = mountComponent({ authToken: 'test-jwt', supabaseUrl: 'https://ztvqsxdudzdyqgeylujr.supabase.co' });
     await wrapper.find('.abo-card__cta').trigger('click');
     await flush();
     await wrapper.vm.$nextTick();
@@ -210,12 +225,12 @@ describe('Stripe-Checkout', () => {
   });
 
   it('[82] 409 ohne Statuscode-Treffer, aber code ALREADY_SUBSCRIBED: gleiche Meldung', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => ({
+    vi.stubGlobal('fetch', mitPreisen(vi.fn(async () => ({
       ok: false,
       status: 400,
       json: async () => ({ code: 'ALREADY_SUBSCRIBED' }),
-    })));
-    const wrapper = mountComponent({ authToken: 'test-jwt' });
+    }))));
+    const wrapper = mountComponent({ authToken: 'test-jwt', supabaseUrl: 'https://ztvqsxdudzdyqgeylujr.supabase.co' });
     await wrapper.find('.abo-card__cta').trigger('click');
     await flush();
     await wrapper.vm.$nextTick();
@@ -230,9 +245,9 @@ describe('Stripe-Checkout', () => {
       // Der Server schickt hier auch technische Texte (STRIPE_NOT_CONFIGURED); die gehoeren nicht auf den Schirm.
       json: async () => ({ error: 'Stripe nicht konfiguriert. Bitte STRIPE_SECRET_KEY in den Supabase Edge Function Secrets setzen.', code: 'STRIPE_NOT_CONFIGURED' }),
     }));
-    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('fetch', mitPreisen(fetchMock));
 
-    const wrapper = mountComponent({ authToken: 'test-jwt' });
+    const wrapper = mountComponent({ authToken: 'test-jwt', supabaseUrl: 'https://ztvqsxdudzdyqgeylujr.supabase.co' });
     await wrapper.find('.abo-card__cta').trigger('click');
     await flush();
     await wrapper.vm.$nextTick();
@@ -248,8 +263,11 @@ describe('Stripe-Checkout', () => {
       { ok: false, status: 409, json: async () => ({ code: 'ALREADY_SUBSCRIBED' }) },
       { ok: false, status: 500, json: async () => ({ error: 'Interner Fehler' }) },
     ];
-    vi.stubGlobal('fetch', vi.fn(async () => antworten.shift()));
-    const wrapper = mountComponent({ authToken: 'test-jwt' });
+    // Nur die Checkout-Aufrufe verbrauchen eine Antwort; Trial- und Preis-Abfragen beim Laden nicht.
+    vi.stubGlobal('fetch', mitPreisen(vi.fn(async (url) => (String(url).includes('/functions/v1/stripe-checkout')
+      ? antworten.shift()
+      : { ok: true, status: 200, json: async () => [] }))));
+    const wrapper = mountComponent({ authToken: 'test-jwt', supabaseUrl: 'https://ztvqsxdudzdyqgeylujr.supabase.co' });
     await wrapper.find('.abo-card__cta').trigger('click');
     await flush();
     await wrapper.vm.$nextTick();
@@ -281,9 +299,9 @@ describe('Timeout (fetchWithTimeout)', () => {
       status: 200,
       json: async () => ({ url: 'https://checkout.stripe.com/test-session' }),
     }));
-    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('fetch', mitPreisen(fetchMock));
 
-    const wrapper = mountComponent({ authToken: 'test-jwt' });
+    const wrapper = mountComponent({ authToken: 'test-jwt', supabaseUrl: 'https://ztvqsxdudzdyqgeylujr.supabase.co' });
     await wrapper.find('.abo-card__cta').trigger('click');
     await flush();
 
@@ -295,9 +313,9 @@ describe('Timeout (fetchWithTimeout)', () => {
   it('Timeout (AbortError) beim Checkout: eigene Meldung, error-Event reason "timeout", Button wieder frei', async () => {
     const abortError = Object.assign(new Error('The operation was aborted.'), { name: 'AbortError' });
     const fetchMock = vi.fn(async () => { throw abortError; });
-    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('fetch', mitPreisen(fetchMock));
 
-    const wrapper = mountComponent({ authToken: 'test-jwt' });
+    const wrapper = mountComponent({ authToken: 'test-jwt', supabaseUrl: 'https://ztvqsxdudzdyqgeylujr.supabase.co' });
     await wrapper.find('.abo-card__cta').trigger('click');
     await flush();
 

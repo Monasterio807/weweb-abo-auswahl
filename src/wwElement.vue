@@ -153,10 +153,6 @@ export default {
       // subscriptions-Zeile, also Gratismonat laut stripe-checkout «Trial prüfen»; false = hatte
       // schon ein Abo; null = unbekannt (nicht angemeldet, keine user_id oder Lesefehler).
       trialBerechtigt: null,
-      priceIds: {
-        basis_month: 'price_1TnxRXFLoauOOkHyLbCG9e4j',
-        basis_year:  'price_1USIfzFLoauOOkHy6yp9t1N0',
-      },
     };
   },
   computed: {
@@ -210,12 +206,20 @@ export default {
     checkoutReturnUrl() { return this.zielUmbiegen((this.content && this.content.checkoutReturnUrl) || '/vertrag-erstellen'); },
 
     // ---- Fix-Runde 24.09.2026 (Vollaudit Kundensicht, F29) ----
-    // Die Karte zeigt den Betrag der plan_prices-Zeile, deren stripe_price_id der Checkout
-    // wirklich sendet (priceIds). Ist die Tabelle (noch) nicht geladen, bleibt der bisherige
-    // Anzeigewert stehen (29/319, Richard 18.10.2026; vorher 29/290), damit die
-    // Karte nie ohne Preis dasteht. Neue Zahlen (Bezugspreis) gibt es NUR aus der DB.
-    zeileMonat() { return this.preise.find(p => p.active !== false && p.stripe_price_id === this.priceIds.basis_month) || null; },
-    zeileJahr() { return this.preise.find(p => p.active !== false && p.stripe_price_id === this.priceIds.basis_year) || null; },
+    // A-006 (24.11.2026): Die Preis-ID steht NICHT mehr fest im Code. Karte und Checkout nehmen
+    // dieselbe Zeile: die aktive plan_prices-Zeile (plan = basis) des Intervalls. Das Backend
+    // (stripe-checkout) nimmt nur IDs, die in plan_prices aktiv sind; so passen beide zusammen.
+    // Ist die Tabelle (noch) nicht geladen oder fehlt die aktive Zeile, ist die Zeile null:
+    // dann steht kein Betrag da und der Checkout startet nicht (siehe startCheckout).
+    zeileMonat() { return this.preise.find(p => p.active !== false && p.interval === 'month') || null; },
+    zeileJahr() { return this.preise.find(p => p.active !== false && p.interval === 'year') || null; },
+    // Die ID, die stripe-checkout bekommt. '' = keine aktive Zeile fuer das gewaehlte Intervall.
+    priceIds() {
+      return {
+        basis_month: (this.zeileMonat && this.zeileMonat.stripe_price_id) || '',
+        basis_year: (this.zeileJahr && this.zeileJahr.stripe_price_id) || '',
+      };
+    },
     // A-040: kein fester Ersatzwert mehr. Ohne geladene Zeile ist der Betrag leer, die Karte
     // zeigt dann keinen Preis (statt einer veralteten Zahl).
     preisMonatChf() { return this.zeileMonat ? this.chf(this.zeileMonat.amount_rappen) : ''; },
@@ -266,11 +270,11 @@ export default {
     },
   },
   watch: {
-    'content.supabaseUrl'() { this.ladePreise(); this.ladeTrial(); },
-    'content.apiKey'() { this.ladePreise(); this.ladeTrial(); },
+    'content.supabaseUrl'() { this._preiseProm = this.ladePreise(); this.ladeTrial(); },
+    'content.apiKey'() { this._preiseProm = this.ladePreise(); this.ladeTrial(); },
     'content.authToken'() { this.ladeTrial(); this.ladeCreditPreise(); },
   },
-  mounted() { hrkEnsureBrandFont(); this.ladePreise(); this.ladeTrial(); this.ladeCreditPreise(); },
+  mounted() { hrkEnsureBrandFont(); this._preiseProm = this.ladePreise(); this.ladeTrial(); this.ladeCreditPreise(); },
   methods: {
     // Altwerte, die auf den Instanzen gebunden sind, beim Rendern auf das heutige
     // Ziel umschreiben. Wortlaut und Begruendung wie in coded-component-header-pro;
@@ -415,7 +419,16 @@ export default {
       this.errorMsg = '';
       this.errorLink = false;
       if (!this.authToken) { this.errorMsg = 'Du bist nicht eingeloggt. Bitte melde dich an.'; return; }
+      // A-006: Klickt jemand, bevor plan_prices angekommen ist, erst fertig laden lassen.
+      if (this._preiseProm) { try { await this._preiseProm; } catch (_) { /* ladePreise faengt selbst */ } }
       const priceId = this.billing === 'year' ? this.priceIds.basis_year : this.priceIds.basis_month;
+      // Keine aktive Zeile fuer das Intervall: kein Kauf, keine geratene oder veraltete ID.
+      // Satz ist ein Entwurf, Canon prueft ihn (Paket A-006).
+      if (!priceId) {
+        this.errorMsg = 'Das Abo lässt sich gerade nicht bestellen. Versuche es später nochmals.';
+        this.emitEvent('error', { reason: 'kein-preis', billing: this.billing });
+        return;
+      }
 
       this.busy = true;
       this.selected = planKey;
